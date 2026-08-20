@@ -21,6 +21,7 @@ class ModuleSourceSpec:
     module_id: str
     name: str
     version: str
+    description: str
     source_environment: str
     default_sibling: str
     build_spec: str
@@ -76,6 +77,7 @@ def load_lock(path: Path = LOCK_PATH) -> tuple[ModuleSourceSpec, ...]:
             ModuleSourceSpec(
                 module_id=module_id,
                 name=str(item.get("name", module_id)).strip(),
+                description=str(item.get("description", "")).strip(),
                 version=str(item.get("version", "")).strip(),
                 source_environment=str(item.get("source_environment", "")).strip(),
                 default_sibling=str(item.get("default_sibling", "")).strip(),

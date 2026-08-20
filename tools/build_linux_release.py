@@ -13,13 +13,18 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from tools.module_sources import ModuleSourceError, ResolvedModuleSource, resolve_module_sources
+from tools.module_sources import (
+    ModuleSourceError,
+    ResolvedModuleSource,
+    load_lock,
+    resolve_module_sources,
+)
 from tools.release_signing import ReleaseSigning, resolve_release_signing
 
 DIST = ROOT / "dist"
 BUILD = ROOT / "build"
 RELEASE = ROOT / "release-linux"
-APP_VERSION = "0.5.2"
+APP_VERSION = "0.5.3"
 PLATFORM_KEY = "linux-x86_64"
 PLATFORM_LABEL = "Linux_x86_64"
 
@@ -153,16 +158,13 @@ def write_source_provenance(sources: dict[str, ResolvedModuleSource]) -> None:
 
 def build(
     *,
-    budgetmanager_source: Path | None = None,
-    fpm_source: Path | None = None,
+    module_sources: dict[str, Path] | None = None,
     allow_unsigned: bool = False,
 ) -> None:
     if not sys.platform.startswith("linux"):
         raise SystemExit("Der Linux-Release muss auf Linux/GitHub Actions ubuntu-latest gebaut werden.")
     signing = resolve_release_signing(allow_unsigned=allow_unsigned)
-    explicit = {key: value for key, value in {
-        "budgetmanager": budgetmanager_source, "fpm": fpm_source,
-    }.items() if value is not None}
+    explicit = {key: value for key, value in (module_sources or {}).items() if value is not None}
     try:
         sources = resolve_module_sources(
             explicit=explicit, require_all=True,
@@ -174,11 +176,11 @@ def build(
     for path in (DIST, BUILD, RELEASE):
         shutil.rmtree(path, ignore_errors=True)
     RELEASE.mkdir(parents=True)
-    budgetmanager, fpm = sources["budgetmanager"], sources["fpm"]
-    materialize_module_public_key(budgetmanager, signing=signing)
-    materialize_module_public_key(fpm, signing=signing)
-    run(sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", budgetmanager.spec.build_spec, cwd=budgetmanager.path)
-    run(sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", fpm.spec.build_spec, cwd=fpm.path)
+    ordered = [sources[spec.module_id] for spec in load_lock()]
+    for resolved in ordered:
+        materialize_module_public_key(resolved, signing=signing)
+    for resolved in ordered:
+        run(sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", resolved.spec.build_spec, cwd=resolved.path)
     run(sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", "LifePlanner.spec", cwd=ROOT)
     run(sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", "LifePlannerUpdater.spec", cwd=ROOT)
 
@@ -188,7 +190,7 @@ def build(
         raise RuntimeError("LifePlanner- oder Updater-Buildausgabe fehlt.")
     shutil.copy2(helper, shell / helper.name)
     modules = shell / "modules"
-    for resolved in (budgetmanager, fpm):
+    for resolved in ordered:
         target = modules / resolved.spec.module_id
         target.mkdir(parents=True, exist_ok=True)
         shutil.copy2(resolved.path / "module.json", target / "module.json")
@@ -210,8 +212,8 @@ def build(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Baut den Fedora/Linux-LifePlanner aus drei getrennten Git-Repositories.")
-    parser.add_argument("--budgetmanager-source", type=Path)
-    parser.add_argument("--fpm-source", type=Path)
+    for spec in load_lock():
+        parser.add_argument(f"--{spec.module_id}-source", type=Path)
     parser.add_argument(
         "--allow-unsigned",
         action="store_true",
@@ -219,7 +221,8 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     build(
-        budgetmanager_source=args.budgetmanager_source,
-        fpm_source=args.fpm_source,
+        module_sources={
+            spec.module_id: getattr(args, f"{spec.module_id}_source", None) for spec in load_lock()
+        },
         allow_unsigned=args.allow_unsigned,
     )

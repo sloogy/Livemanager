@@ -12,13 +12,18 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from tools.module_sources import ModuleSourceError, ResolvedModuleSource, resolve_module_sources
+from tools.module_sources import (
+    ModuleSourceError,
+    ResolvedModuleSource,
+    load_lock,
+    resolve_module_sources,
+)
 from tools.release_signing import ReleaseSigning, resolve_release_signing
 
 DIST = ROOT / "dist"
 BUILD = ROOT / "build"
 RELEASE = ROOT / "release"
-APP_VERSION = "0.5.2"
+APP_VERSION = "0.5.3"
 
 
 def run(*args: str, cwd: Path = ROOT, env: dict[str, str] | None = None) -> None:
@@ -181,12 +186,13 @@ def _build_update_assets(shell: Path, *, signing: ReleaseSigning) -> None:
     shutil.rmtree(core_payload, ignore_errors=True)
 
 
+def _repository_variables() -> dict[str, str]:
+    return {spec.module_id: spec.repository_variable for spec in load_lock()}
+
+
 def _repository_slug(module_id: str, default_repository: str) -> str:
     owner = os.environ.get("GITHUB_REPOSITORY_OWNER", "").strip()
-    variable = {
-        "budgetmanager": "BUDGETMANAGER_REPOSITORY",
-        "fpm": "FPM_REPOSITORY",
-    }.get(module_id, "")
+    variable = _repository_variables().get(module_id, "")
     configured = os.environ.get(variable, "").strip() if variable else ""
     if configured:
         return configured
@@ -216,11 +222,7 @@ def _write_installer_sources(installer_source: Path) -> None:
                 "name": str(item["name"]),
                 "repository": _repository_slug(module_id, str(item["default_repository"])),
                 "asset_pattern": rf"{safe_id}_{version_pattern}_Windows_x86_64\.lpmodule",
-                "description": (
-                    "Budget, Buchungen, Forecasts, Sparziele und Monatsabschluss."
-                    if module_id == "budgetmanager"
-                    else "Füller, Tinten, Federn, Papier, Rotation und Sammlungswissen."
-                ),
+                "description": str(item.get("description", "")),
                 "requires_host": ">=0.5.0",
             }
         )
@@ -260,22 +262,14 @@ def _write_source_provenance(sources: dict[str, ResolvedModuleSource]) -> None:
 
 def build(
     *,
-    budgetmanager_source: Path | None = None,
-    fpm_source: Path | None = None,
+    module_sources: dict[str, Path] | None = None,
     allow_unsigned: bool = False,
 ) -> None:
     if not sys.platform.startswith("win"):
         raise SystemExit("Der Windows-Release muss auf Windows oder GitHub Actions windows-latest gebaut werden.")
 
     signing = resolve_release_signing(allow_unsigned=allow_unsigned)
-    explicit = {
-        key: value
-        for key, value in {
-            "budgetmanager": budgetmanager_source,
-            "fpm": fpm_source,
-        }.items()
-        if value is not None
-    }
+    explicit = {key: value for key, value in (module_sources or {}).items() if value is not None}
     try:
         sources = resolve_module_sources(
             explicit=explicit,
@@ -290,13 +284,11 @@ def build(
     shutil.rmtree(RELEASE, ignore_errors=True)
     RELEASE.mkdir(parents=True)
 
-    budgetmanager = sources["budgetmanager"]
-    fpm = sources["fpm"]
-    _materialize_module_public_key(budgetmanager, signing=signing)
-    _materialize_module_public_key(fpm, signing=signing)
-
-    run(sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", budgetmanager.spec.build_spec, cwd=budgetmanager.path)
-    run(sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", fpm.spec.build_spec, cwd=fpm.path)
+    ordered = [sources[spec.module_id] for spec in load_lock()]
+    for resolved in ordered:
+        _materialize_module_public_key(resolved, signing=signing)
+    for resolved in ordered:
+        run(sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", resolved.spec.build_spec, cwd=resolved.path)
     run(sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", "LifePlanner.spec", cwd=ROOT)
     run(sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", "LifePlannerUpdater.spec", cwd=ROOT)
     run(sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", "LifePlannerInstallerBootstrap.spec", cwd=ROOT)
@@ -308,7 +300,7 @@ def build(
     shutil.copy2(helper, shell / helper.name)
 
     modules = shell / "modules"
-    for resolved in (budgetmanager, fpm):
+    for resolved in ordered:
         module_id = resolved.spec.module_id
         target = modules / module_id
         target.mkdir(parents=True, exist_ok=True)
@@ -344,8 +336,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Baut LifePlanner aus drei getrennten Git-Repositories."
     )
-    parser.add_argument("--budgetmanager-source", type=Path)
-    parser.add_argument("--fpm-source", type=Path)
+    for spec in load_lock():
+        parser.add_argument(f"--{spec.module_id}-source", type=Path)
     parser.add_argument(
         "--allow-unsigned",
         action="store_true",
@@ -353,7 +345,8 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     build(
-        budgetmanager_source=args.budgetmanager_source,
-        fpm_source=args.fpm_source,
+        module_sources={
+            spec.module_id: getattr(args, f"{spec.module_id}_source", None) for spec in load_lock()
+        },
         allow_unsigned=args.allow_unsigned,
     )

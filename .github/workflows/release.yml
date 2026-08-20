@@ -15,6 +15,7 @@ jobs:
     env:
       LIFEPLANNER_BUDGETMANAGER_SOURCE: ${{ github.workspace }}\module-sources\budgetmanager
       LIFEPLANNER_FPM_SOURCE: ${{ github.workspace }}\module-sources\fpm
+      LIFEPLANNER_FREIZEITMANAGER_SOURCE: ${{ github.workspace }}\module-sources\freizeitmanager
     steps:
       - name: Checkout LifePlanner Core
         uses: actions/checkout@v4
@@ -36,6 +37,14 @@ jobs:
           ref: ${{ vars.FPM_REF || 'v1.0.0' }}
           token: ${{ secrets.LIFEPLANNER_MODULES_TOKEN || github.token }}
           path: module-sources/fpm
+
+      - name: Checkout Kontaktmanager repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.FREIZEITMANAGER_REPOSITORY || 'sloogy/Kontaktmanager' }}
+          ref: ${{ vars.FREIZEITMANAGER_REF || 'v0.1.1' }}
+          token: ${{ secrets.LIFEPLANNER_MODULES_TOKEN || github.token }}
+          path: module-sources/freizeitmanager
 
       - uses: actions/setup-python@v5
         with:
@@ -68,6 +77,7 @@ jobs:
           --allow-unsigned
           --budgetmanager-source "${{ env.LIFEPLANNER_BUDGETMANAGER_SOURCE }}"
           --fpm-source "${{ env.LIFEPLANNER_FPM_SOURCE }}"
+          --freizeitmanager-source "${{ env.LIFEPLANNER_FREIZEITMANAGER_SOURCE }}"
 
       - name: Verify explicit unsigned first-release assets and provenance
         shell: pwsh
@@ -88,7 +98,7 @@ jobs:
         shell: pwsh
         run: |
           iscc installer\LifePlanner.iss
-          if (-not (Test-Path "release/LifePlanner_0.5.2_Windows_Setup.exe")) { throw "Windows setup missing" }
+          if (-not (Test-Path "release/LifePlanner_0.5.3_Windows_Setup.exe")) { throw "Windows setup missing" }
 
       - name: Publish GitHub release assets
         if: startsWith(github.ref, 'refs/tags/')
@@ -99,14 +109,14 @@ jobs:
         run: |
           gh release view "${{ github.ref_name }}" *> $null
           if ($LASTEXITCODE -ne 0) { gh release create "${{ github.ref_name }}" --title "LifePlanner ${{ github.ref_name }}" --generate-notes }
-          gh release upload "${{ github.ref_name }}" release/LifePlanner_0.5.2_Windows_Portable.zip release/LifePlanner_0.5.2_Windows_Setup.exe release/module-source-provenance.json release/update-assets/* --clobber
+          gh release upload "${{ github.ref_name }}" release/LifePlanner_0.5.3_Windows_Portable.zip release/LifePlanner_0.5.3_Windows_Setup.exe release/module-source-provenance.json release/update-assets/* --clobber
 
       - uses: actions/upload-artifact@v4
         with:
           name: LifePlanner-Windows
           path: |
-            lifeplanner/release/LifePlanner_0.5.2_Windows_Portable.zip
-            lifeplanner/release/LifePlanner_0.5.2_Windows_Setup.exe
+            lifeplanner/release/LifePlanner_0.5.3_Windows_Portable.zip
+            lifeplanner/release/LifePlanner_0.5.3_Windows_Setup.exe
             lifeplanner/release/module-source-provenance.json
             lifeplanner/release/update-assets/*
 
@@ -115,6 +125,7 @@ jobs:
     env:
       LIFEPLANNER_BUDGETMANAGER_SOURCE: ${{ github.workspace }}/module-sources/budgetmanager
       LIFEPLANNER_FPM_SOURCE: ${{ github.workspace }}/module-sources/fpm
+      LIFEPLANNER_FREIZEITMANAGER_SOURCE: ${{ github.workspace }}/module-sources/freizeitmanager
       QT_QPA_PLATFORM: offscreen
     steps:
       - name: Checkout LifePlanner Core
@@ -137,6 +148,14 @@ jobs:
           ref: ${{ vars.FPM_REF || 'v1.0.0' }}
           token: ${{ secrets.LIFEPLANNER_MODULES_TOKEN || github.token }}
           path: module-sources/fpm
+
+      - name: Checkout Kontaktmanager repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.FREIZEITMANAGER_REPOSITORY || 'sloogy/Kontaktmanager' }}
+          ref: ${{ vars.FREIZEITMANAGER_REF || 'v0.1.1' }}
+          token: ${{ secrets.LIFEPLANNER_MODULES_TOKEN || github.token }}
+          path: module-sources/freizeitmanager
 
       - uses: actions/setup-python@v5
         with:
@@ -169,12 +188,13 @@ jobs:
           --allow-unsigned
           --budgetmanager-source "${{ env.LIFEPLANNER_BUDGETMANAGER_SOURCE }}"
           --fpm-source "${{ env.LIFEPLANNER_FPM_SOURCE }}"
+          --freizeitmanager-source "${{ env.LIFEPLANNER_FREIZEITMANAGER_SOURCE }}"
 
       - name: Verify Linux artifacts
         working-directory: lifeplanner
         run: |
-          test -f release-linux/LifePlanner_0.5.2_Linux_x86_64_Portable.tar.gz
-          test -f release-linux/LifePlanner_0.5.2_Linux_x86_64_Portable.zip
+          test -f release-linux/LifePlanner_0.5.3_Linux_x86_64_Portable.tar.gz
+          test -f release-linux/LifePlanner_0.5.3_Linux_x86_64_Portable.zip
           test ! -f release-linux/update-assets/lifeplanner-latest-linux.json.sig
           test "$(find release-linux/update-assets -maxdepth 1 -name '*.lpmodule' -type f | wc -l)" -ge 2
           test -f release-linux/module-source-provenance-linux.json
@@ -186,13 +206,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release view "${{ github.ref_name }}" >/dev/null 2>&1 || gh release create "${{ github.ref_name }}" --title "LifePlanner ${{ github.ref_name }}" --generate-notes
-          gh release upload "${{ github.ref_name }}" release-linux/LifePlanner_0.5.2_Linux_x86_64_Portable.tar.gz release-linux/LifePlanner_0.5.2_Linux_x86_64_Portable.zip release-linux/module-source-provenance-linux.json release-linux/update-assets/* --clobber
+          gh release upload "${{ github.ref_name }}" release-linux/LifePlanner_0.5.3_Linux_x86_64_Portable.tar.gz release-linux/LifePlanner_0.5.3_Linux_x86_64_Portable.zip release-linux/module-source-provenance-linux.json release-linux/update-assets/* --clobber
 
       - uses: actions/upload-artifact@v4
         with:
           name: LifePlanner-Linux
           path: |
-            lifeplanner/release-linux/LifePlanner_0.5.2_Linux_x86_64_Portable.tar.gz
-            lifeplanner/release-linux/LifePlanner_0.5.2_Linux_x86_64_Portable.zip
+            lifeplanner/release-linux/LifePlanner_0.5.3_Linux_x86_64_Portable.tar.gz
+            lifeplanner/release-linux/LifePlanner_0.5.3_Linux_x86_64_Portable.zip
             lifeplanner/release-linux/module-source-provenance-linux.json
             lifeplanner/release-linux/update-assets/*

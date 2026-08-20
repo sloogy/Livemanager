@@ -1,6 +1,6 @@
 {
   "schema": "lifeplanner.module-sources.v1",
-  "host_version": "0.5.2",
+  "host_version": "0.5.3",
   "modules": [
     {
       "id": "budgetmanager",
@@ -14,7 +14,8 @@
       "default_sibling": "../Budgetmanager",
       "build_spec": "BudgetManager.spec",
       "dist_directory": "dist/BudgetManager",
-      "runtime_directory": "BudgetManager"
+      "runtime_directory": "BudgetManager",
+      "description": "Budget, Buchungen, Forecasts, Sparziele und Monatsabschluss."
     },
     {
       "id": "fpm",
@@ -28,7 +29,23 @@
       "default_sibling": "../FPM",
       "build_spec": "FPM.spec",
       "dist_directory": "dist/FountainPenManager",
-      "runtime_directory": "FountainPenManager"
+      "runtime_directory": "FountainPenManager",
+      "description": "Füller, Tinten, Federn, Papier, Rotation und Sammlungswissen."
+    },
+    {
+      "id": "freizeitmanager",
+      "name": "FreizeitManager",
+      "version": "0.1.1",
+      "description": "Freundschaftspflege, Kontaktrotation, Aktivitaeten und Freizeitplanung.",
+      "default_repository": "sloogy/Kontaktmanager",
+      "repository_variable": "FREIZEITMANAGER_REPOSITORY",
+      "default_ref": "v0.1.1",
+      "ref_variable": "FREIZEITMANAGER_REF",
+      "source_environment": "LIFEPLANNER_FREIZEITMANAGER_SOURCE",
+      "default_sibling": "../Kontaktmanager",
+      "build_spec": "FreizeitManager.spec",
+      "dist_directory": "dist/FreizeitManager",
+      "runtime_directory": "FreizeitManager"
     }
   ]
 }

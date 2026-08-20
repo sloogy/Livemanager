@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.3 – Kontaktmanager als drittes Modul
+
+- **FreizeitManager** (Repository `sloogy/Kontaktmanager`) als drittes Modul aufgenommen: Kontaktrotation, Beziehungsfrische und Freizeitplanung. Aufgenommen in Lockdatei, GitHub-Katalog und Releaseworkflow.
+- Die Modul-ID lautet `freizeitmanager`; das Repository heißt `Kontaktmanager`. Assets erscheinen daher als `freizeitmanager_<Version>_<Plattform>.lpmodule`.
+- `tools/build_release.py` und `tools/build_linux_release.py` hatten BudgetManager und FPM fest verdrahtet. Beide leiten Repository-Variablen, Buildaufrufe und Quellparameter jetzt aus `dependencies/modules.lock.json` ab; ein weiteres Modul wäre sonst lautlos aus Release und Installer gefallen.
+- `tools/validate_release.py` prüft jetzt jedes Modul aus der Lockdatei statt fest zwei; fehlende Vertragstests werden übersprungen statt verlangt.
+- Ein Regressionstest stellt sicher, dass jedes Modul der Lockdatei im Workflow ausgecheckt und mitgebaut wird und dass die Buildskripte keine Modul-ID mehr fest verdrahten.
+
 ## 0.5.2 – FPM 1.0.0
 
 - Kompatibilitätsbasis auf FPM 1.0.0 angehoben. Dieses Release behebt im FPM-Repository die Ursache dafür, dass das veröffentlichte Linux-`.lpmodule` die Programmdatei nur als `0644` speicherte.

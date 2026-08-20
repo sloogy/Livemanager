@@ -1,4 +1,4 @@
-# LifePlanner 0.5.2 – Multi-Repository-Plattform mit GitHub-Modulinstaller
+# LifePlanner 0.5.3 – Multi-Repository-Plattform mit GitHub-Modulinstaller
 
 LifePlanner ist der modulare Desktop-Host. **BudgetManager und FPM bleiben vollständig eigenständige Git-Repositories** mit eigener Versionshistorie, eigenen Issues, Tests, Releases und Standalone-Builds.
 
@@ -126,13 +126,13 @@ LIFEPLANNER_UPDATE_PUBLIC_KEY_B64
 
 ## Windows-Release
 
-Ein Tag wie `lifeplanner-v0.5.2` baut aus den drei getrennten Checkouts:
+Ein Tag wie `lifeplanner-v0.5.3` baut aus den drei getrennten Checkouts:
 
-- `LifePlanner_0.5.2_Windows_Portable.zip`
-- `LifePlanner_Core_0.5.2_Windows_x86_64.zip`
+- `LifePlanner_0.5.3_Windows_Portable.zip`
+- `LifePlanner_Core_0.5.3_Windows_x86_64.zip`
 - `budgetmanager_2.2.62_Windows_x86_64.lpmodule`
 - `fpm_1.0.0_Windows_x86_64.lpmodule`
-- `LifePlanner_0.5.2_Windows_Setup.exe`
+- `LifePlanner_0.5.3_Windows_Setup.exe`
 - `lifeplanner-latest.json`
 - `module-source-provenance.json`
 

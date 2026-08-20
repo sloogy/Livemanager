@@ -258,12 +258,12 @@ def test_generated_installer_sources_use_separate_repository_variables() -> None
     root = Path(__file__).resolve().parents[1]
     build = (root / "tools" / "build_release.py").read_text(encoding="utf-8")
     lock = json.loads((root / "dependencies" / "modules.lock.json").read_text(encoding="utf-8"))
-    assert {item["repository_variable"] for item in lock["modules"]} == {
-        "BUDGETMANAGER_REPOSITORY",
-        "FPM_REPOSITORY",
-    }
-    assert '"BUDGETMANAGER_REPOSITORY"' in build
-    assert '"FPM_REPOSITORY"' in build
+    variables = [item["repository_variable"] for item in lock["modules"]]
+    assert variables == ["BUDGETMANAGER_REPOSITORY", "FPM_REPOSITORY", "FREIZEITMANAGER_REPOSITORY"]
+    # Die Repository-Variablen stammen aus der Lockdatei, nicht aus einer
+    # fest verdrahteten Liste im Buildskript.
+    assert "_repository_variables()" in build
+    assert "BUDGETMANAGER_REPOSITORY" not in build
     assert "github.repository_owner" not in build  # GitHub expression belongs only in the workflow.
 
 

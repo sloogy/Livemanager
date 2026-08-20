@@ -6,6 +6,7 @@ from dataclasses import dataclass
 CORE_REPOSITORY = "sloogy/Livemanager"
 BUDGETMANAGER_REPOSITORY = "sloogy/Budgetmanager"
 FPM_REPOSITORY = "sloogy/FPM"
+FREIZEITMANAGER_REPOSITORY = "sloogy/Kontaktmanager"
 
 CORE_LATEST_MANIFEST_URL = (
     f"https://github.com/{CORE_REPOSITORY}/releases/latest/download/lifeplanner-latest.json"
@@ -38,6 +39,13 @@ TRUSTED_MODULE_REPOSITORIES = (
         repository=FPM_REPOSITORY,
         description="Füller, Tinten, Federn, Papier, Rotation und Sammlungswissen.",
         minimum_version="1.0.0",
+    ),
+    TrustedModuleRepository(
+        module_id="freizeitmanager",
+        name="FreizeitManager",
+        repository=FREIZEITMANAGER_REPOSITORY,
+        description="Freundschaftspflege, Kontaktrotation, Aktivitäten und Freizeitplanung.",
+        minimum_version="0.1.1",
     ),
 )
 

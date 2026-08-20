@@ -47,61 +47,54 @@ def core_checks() -> list[tuple[Path, list[str]]]:
 
 
 def module_checks() -> list[tuple[Path, list[str]]]:
+    """Per-module LifePlanner contract checks, driven by the lock file.
+
+    Entries are curated per module because each repository names its own
+    contract tests. Missing files are skipped so that a module can join
+    before it ships every check.
+    """
+    compile_targets = {
+        "budgetmanager": [
+            "model/lifeplanner_import_service.py",
+            "views/lifeplanner_import_dialog.py",
+            "views/main_window.py",
+        ],
+        "fpm": [
+            "logic/budget_export_service.py",
+            "ui/settings_widget.py",
+        ],
+        "freizeitmanager": [
+            "tools/build_lifeplanner_module.py",
+        ],
+    }
+    test_targets = {
+        "budgetmanager": [
+            "tests/test_lifeplanner_import_inbox.py",
+            "tests/test_lifeplanner_host_contract.py",
+            "tests/test_lifeplanner_module_release.py",
+        ],
+        "fpm": [
+            "tests/test_budgetmanager_bridge_service.py",
+            "tests/test_collection_health_service.py",
+            "tests/test_lifeplanner_host_contract.py",
+            "tests/test_lifeplanner_module_release.py",
+        ],
+        "freizeitmanager": [
+            "tests/test_packaging.py",
+        ],
+    }
+
     sources = resolve_module_sources(require_all=True)
-    budget = sources["budgetmanager"].path
-    fpm = sources["fpm"].path
-    return [
-        (
-            budget,
-            [
-                sys.executable,
-                "-m",
-                "compileall",
-                "-q",
-                "model/lifeplanner_import_service.py",
-                "views/lifeplanner_import_dialog.py",
-                "views/main_window.py",
-            ],
-        ),
-        (
-            budget,
-            [
-                sys.executable,
-                "-m",
-                "pytest",
-                "-q",
-                "tests/test_lifeplanner_import_inbox.py",
-                "tests/test_lifeplanner_host_contract.py",
-                "tests/test_lifeplanner_module_release.py",
-            ],
-        ),
-        (
-            fpm,
-            [
-                sys.executable,
-                "-m",
-                "compileall",
-                "-q",
-                "logic/budget_export_service.py",
-                "ui/settings_widget.py",
-            ],
-        ),
-        (
-            fpm,
-            [
-                sys.executable,
-                "-m",
-                "pytest",
-                "-q",
-                "tests/test_budgetmanager_bridge_service.py",
-                "tests/test_collection_health_service.py",
-                "tests/test_lifeplanner_host_contract.py",
-                "tests/test_lifeplanner_module_release.py",
-            ],
-        ),
-    ]
-
-
+    checks: list[tuple[Path, list[str]]] = []
+    for module_id, resolved in sources.items():
+        root = resolved.path
+        present = [name for name in compile_targets.get(module_id, []) if (root / name).is_file()]
+        if present:
+            checks.append((root, [sys.executable, "-m", "compileall", "-q", *present]))
+        tests = [name for name in test_targets.get(module_id, []) if (root / name).is_file()]
+        if tests:
+            checks.append((root, [sys.executable, "-m", "pytest", "-q", *tests]))
+    return checks
 def main() -> int:
     parser = argparse.ArgumentParser(description="Validiert LifePlanner Core und optional die getrennten Modul-Repositories.")
     parser.add_argument(
