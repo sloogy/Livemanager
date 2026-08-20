@@ -131,3 +131,59 @@ def test_frozen_host_rejects_source_only_module(tmp_path: Path, monkeypatch: pyt
     info = service.inspect_package(package)
     assert info.compatible is False
     assert "programmdatei" in info.compatibility_reason.lower()
+
+
+def test_module_runtime_is_executable_even_if_package_lost_the_bit(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Some published .lpmodule packages record the runtime as 0644, which used
+    # to make the installed module fail to start with "[Errno 13]".
+    import os
+    import sys
+
+    monkeypatch.setenv("LIFEPLANNER_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv("LIFEPLANNER_APP_DIR", str(tmp_path / "app"))
+    (tmp_path / "app/modules").mkdir(parents=True)
+
+    payload = tmp_path / "payload"
+    runtime = payload / "Demo"
+    runtime.parent.mkdir(parents=True)
+    runtime.write_text("#!/bin/sh\necho demo\n", encoding="utf-8")
+    runtime.chmod(0o644)
+    (payload / "main.py").write_text("print('demo')\n", encoding="utf-8")
+    (payload / "module.json").write_text(
+        json.dumps(
+            {
+                "schema": "lifeplanner.module.v1",
+                "id": "demo",
+                "name": "Demo-Modul",
+                "version": "1.0.0",
+                "description": "Testmodul",
+                "source_entry": "main.py",
+                "windows_executable": "Demo",
+                "linux_executable": "Demo",
+                "permissions": ["own_data_read"],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    package = build_component_package(
+        payload=payload,
+        component_id="demo",
+        name="Demo-Modul",
+        version="1.0.0",
+        kind="module",
+        output=tmp_path / "demo.lpmodule",
+        requires_host=">=0.4.0",
+        platforms=(),
+        private_key_b64="",
+    )
+    service = ModuleInstallerService(UpdateService(PluginLoadResult((), ())))
+    info = service.inspect_package(package)
+
+    installed_runtime = info.payload_dir / "Demo"
+    if os.name != "nt":
+        assert os.access(installed_runtime, os.X_OK)
+    # Granting the bit must not invalidate the payload hash.
+    assert service.stage_package(info).tree_sha256 == info.payload_sha256

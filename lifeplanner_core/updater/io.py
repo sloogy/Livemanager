@@ -169,6 +169,24 @@ def _zip_member_is_symlink(info: zipfile.ZipInfo) -> bool:
     return stat.S_ISLNK(mode)
 
 
+def _zip_member_is_executable(info: zipfile.ZipInfo) -> bool:
+    mode = (info.external_attr >> 16) & 0xFFFF
+    return bool(stat.S_IMODE(mode) & 0o111)
+
+
+def ensure_executable(target: Path) -> None:
+    """Grant execute permission to a module runtime.
+
+    Mirrors the read bits into execute instead of applying an archived mode
+    directly: the result still respects the umask, and setuid/setgid/sticky
+    bits are never introduced.
+    """
+    if os.name == "nt":
+        return
+    current = stat.S_IMODE(target.stat().st_mode)
+    target.chmod(current | ((current & 0o444) >> 2))
+
+
 def secure_extract_zip(archive_path: Path, destination: Path) -> None:
     shutil.rmtree(destination, ignore_errors=True)
     destination.mkdir(parents=True, exist_ok=True)
@@ -202,6 +220,8 @@ def secure_extract_zip(archive_path: Path, destination: Path) -> None:
                 target.parent.mkdir(parents=True, exist_ok=True)
                 with archive.open(info, "r") as source, target.open("wb") as output:
                     shutil.copyfileobj(source, output, length=1024 * 1024)
+                if _zip_member_is_executable(info):
+                    ensure_executable(target)
     except zipfile.BadZipFile as exc:
         shutil.rmtree(destination, ignore_errors=True)
         raise UpdateIOError(f"Ungültiges ZIP-Archiv: {exc}") from exc

@@ -15,7 +15,14 @@ from . import APP_VERSION
 from .manifest import ManifestError, ModuleManifest
 from .paths import data_root
 from .plugin_loader import discover_modules
-from .updater.io import MAX_COMPONENT_BYTES, UpdateIOError, secure_extract_zip, sha256_file, tree_sha256
+from .updater.io import (
+    MAX_COMPONENT_BYTES,
+    UpdateIOError,
+    ensure_executable,
+    secure_extract_zip,
+    sha256_file,
+    tree_sha256,
+)
 from .updater.manifest import UpdateComponent, platform_family_key, platform_key
 from .updater.service import StagedComponent, UpdateService, UpdateServiceError
 from .updater.signing import UpdateSignatureError, verify_manifest_signature
@@ -184,6 +191,11 @@ class ModuleInstallerService:
 
             executable = module_manifest.executable_relative()
             executable_ok = bool(executable and (validated_payload / executable).is_file())
+            if executable_ok:
+                # Not every published package records the execute bit, and the
+                # payload hash covers path, size and content only — so granting
+                # it here keeps the module launchable without altering the hash.
+                ensure_executable(validated_payload / executable)
             source_ok = bool(module_manifest.source_entry and (validated_payload / module_manifest.source_entry).is_file())
             if getattr(sys, "frozen", False):
                 if not executable_ok:

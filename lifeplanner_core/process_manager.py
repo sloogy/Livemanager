@@ -13,6 +13,7 @@ from . import APP_VERSION
 from .event_bus import FileEventBus, LifePlannerEvent
 from .manifest import ModuleManifest
 from .paths import bridge_dir, logs_dir, module_data_dir, profile_dir
+from .updater.io import ensure_executable
 
 
 class ModuleLaunchError(RuntimeError):
@@ -41,6 +42,14 @@ class ModuleProcessManager:
             executable = (manifest.module_dir / exe_rel).resolve()
             if not executable.is_file():
                 raise ModuleLaunchError(f"Modulprogramm fehlt: {executable}")
+            if os.name != "nt" and not os.access(executable, os.X_OK):
+                # An older installation may predate the execute-bit fix.
+                try:
+                    ensure_executable(executable)
+                except OSError as exc:
+                    raise ModuleLaunchError(
+                        f"Modulprogramm ist nicht ausführbar: {executable} ({exc})"
+                    ) from exc
             return [str(executable)]
         source = (manifest.module_dir / manifest.source_entry).resolve()
         if not source.is_file():
