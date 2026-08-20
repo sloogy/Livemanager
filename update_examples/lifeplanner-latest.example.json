@@ -1,0 +1,37 @@
+{
+  "schema": "lifeplanner.update.v1",
+  "channel": "stable",
+  "generated_at": "2026-07-30T12:00:00+00:00",
+  "components": {
+    "lifeplanner.core": {
+      "id": "lifeplanner.core",
+      "name": "LifePlanner Core",
+      "version": "0.5.0",
+      "kind": "core",
+      "requires_host": "",
+      "assets": {
+        "windows-x86_64": {
+          "url": "https://github.com/OWNER/REPOSITORY/releases/download/lifeplanner-v0.5.0/LifePlanner_Core_0.5.0_Windows_x86_64.zip",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "size": 1,
+          "type": "component-zip"
+        }
+      }
+    },
+    "budgetmanager": {
+      "id": "budgetmanager",
+      "name": "BudgetManager",
+      "version": "2.2.56",
+      "kind": "module",
+      "requires_host": ">=0.5.0",
+      "assets": {
+        "windows-x86_64": {
+          "url": "https://github.com/OWNER/REPOSITORY/releases/download/lifeplanner-v0.5.0/budgetmanager_2.2.56_Windows_x86_64.lpmodule",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "size": 1,
+          "type": "component-zip"
+        }
+      }
+    }
+  }
+}
