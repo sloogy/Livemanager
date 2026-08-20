@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.6 – FPM 1.0.2
+
+- FPM 1.0.2: der Releasejob von 1.0.1 brach an einem i18n-Gate ab, das eine Diagnosemeldung für sichtbaren UI-Text hielt. Funktional identisch, 1.0.1 wurde nie veröffentlicht.
+- Kompatibilitätsbasis auf FPM 1.0.2 angehoben.
+
 ## 0.5.5 – FPM folgt der zentralen Darstellung
 
 - FPM 1.0.1 übernimmt das zentral gewählte Designprofil für Hauptfenster, Seitenleiste, Toolbar, Tabellen, Eingabefelder, Karten und Dialoge; die Schriftgröße des Profils wirkt als Skalierungsfaktor.

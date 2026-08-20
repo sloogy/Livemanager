@@ -59,7 +59,7 @@ def _download(url: str, destination: Path, expected_size: int, *, timeout: int =
         raise InstallerCatalogError("Ungültige Größe des Moduldownloads.")
     destination.parent.mkdir(parents=True, exist_ok=True)
     temp = destination.with_suffix(destination.suffix + ".part")
-    headers = {"User-Agent": "LifePlanner-Installer/0.5.5"}
+    headers = {"User-Agent": "LifePlanner-Installer/0.5.6"}
     token = github_token()
     if token:
         headers["Authorization"] = f"Bearer {token}"
