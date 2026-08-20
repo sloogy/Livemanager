@@ -9,7 +9,8 @@ def test_windows_packaging_contains_external_updater() -> None:
     assert "LifePlannerUpdater.spec" in build
     assert "LifePlannerUpdater.exe" in build
     assert "lifeplanner-latest.json.sig" in workflow
-    assert "LIFEPLANNER_UPDATE_PRIVATE_KEY_B64" in workflow
+    assert "--allow-unsigned" in workflow
+    assert "LIFEPLANNER_UPDATE_PRIVATE_KEY_B64" not in workflow
 
 
 def test_modules_receive_central_updater_contract_without_source_merge() -> None:

@@ -71,9 +71,9 @@ Der Installer verwendet denselben eingebetteten öffentlichen Vertrauensanker wi
 
 ## Unsignierte Pakete
 
-Unsignierte Pakete sind für lokale Entwicklung erlaubt. Die Oberfläche zeigt eine eigenständige Warnung und verwendet standardmäßig **Abbrechen**. Der Benutzer muss die Herkunft ausdrücklich bestätigen.
+Unsignierte Pakete sind für lokale Entwicklung und den bewusst unsignierten ersten Release erlaubt. Die Oberfläche zeigt eine eigenständige Warnung und verwendet standardmäßig **Abbrechen**. Der Benutzer muss die Herkunft ausdrücklich bestätigen.
 
-Remote-Kataloge bleiben davon unberührt: Das zentrale Manifest muss im Produktivbetrieb signiert sein und bindet den SHA-256 des vollständigen Paketdownloads.
+Remote-Kataloge bleiben davon unberührt: Der GitHub-Bootstrap lehnt unsignierte Pakete ab. Das zentrale Remote-Manifest muss für automatische Updates signiert sein und bindet den SHA-256 des vollständigen Paketdownloads.
 
 ## Installation und Aktualisierung
 
@@ -133,15 +133,11 @@ LifePlanner.exe --install-module "%1"
 
 LifePlanner öffnet daraufhin die Module-Seite und startet die normale Sicherheitsprüfung. Ein Doppelklick umgeht keine Bestätigung.
 
-## Optionaler Windows-Setup
+## Windows-Setup
 
-Der Hauptinstaller besitzt Inno-Setup-Komponenten:
+Der Online-Setup installiert den Core und verlangt mindestens ein verfügbares Modul aus einem signierten Remote-Katalog. Der bewusst unsignierte erste Release wird stattdessen als Portable-Paket bereitgestellt; seine `.lpmodule`-Assets werden anschließend lokal über die Modulverwaltung und den oben beschriebenen Vertrauensdialog installiert.
 
-- `core` – immer installiert
-- `modules\budgetmanager` – optional
-- `modules\fpm` – optional
-
-Damit kann ein Benutzer zunächst nur den Core installieren und alle Module später über `.lpmodule` oder den signierten Online-Katalog ergänzen.
+Ein Doppelklick auf ein lokales `.lpmodule` öffnet denselben Prüf- und Bestätigungsweg.
 
 ## Modulpaket bauen
 
@@ -149,10 +145,11 @@ Damit kann ein Benutzer zunächst nur den Core installieren und alle Module spä
 python tools/build_module_package.py modules/mein-modul \
   --output release/mein-modul_1.0.0.lpmodule \
   --requires-host ">=0.4.0,<1.0" \
-  --platform windows-x86_64
+  --platform windows-x86_64 \
+  --allow-unsigned
 ```
 
-Releasepakete sollten immer mit `LIFEPLANNER_UPDATE_PRIVATE_KEY_B64` signiert werden.
+`--allow-unsigned` ist nur für den bewussten ersten Release und lokale Installation vorgesehen. Ohne Signaturschlüssel **und** ohne diesen Schalter bricht der Builder ab. Spätere Releases sollen `LIFEPLANNER_UPDATE_PRIVATE_KEY_B64` verwenden und den Schalter entfernen.
 
 ## Git-Quelltrennung ab LifePlanner 0.4.1
 

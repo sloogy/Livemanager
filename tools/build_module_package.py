@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from lifeplanner_core.updater.package_builder import build_component_package
+from tools.release_signing import resolve_package_private_key
 
 
 def main() -> int:
@@ -19,7 +20,20 @@ def main() -> int:
     parser.add_argument("--requires-host", default=">=0.5.0")
     parser.add_argument("--platform", action="append", default=[], help="z. B. windows-x86_64 oder linux-x86_64")
     parser.add_argument("--private-key", default=os.environ.get("LIFEPLANNER_UPDATE_PRIVATE_KEY_B64", ""))
+    parser.add_argument(
+        "--allow-unsigned",
+        action="store_true",
+        help="Baut bewusst ohne Signatur; nur für den ersten Release und manuell bestätigte lokale Installation.",
+    )
     args = parser.parse_args()
+
+    try:
+        private_key = resolve_package_private_key(
+            allow_unsigned=args.allow_unsigned,
+            private_key_b64=args.private_key,
+        )
+    except RuntimeError as exc:
+        raise SystemExit(str(exc)) from exc
 
     module_dir = args.module_dir.resolve()
     manifest_path = module_dir / "module.json"
@@ -41,11 +55,11 @@ def main() -> int:
         requires_host=args.requires_host,
         description=str(info.get("description", "")),
         platforms=args.platform,
-        private_key_b64=str(args.private_key).strip(),
+        private_key_b64=private_key,
     )
     print(output)
-    if not str(args.private_key).strip():
-        print("WARNUNG: Paket ist nicht signiert.")
+    if not private_key:
+        print("WARNUNG: Paket ist ausdrücklich nicht signiert; LifePlanner verlangt lokale Vertrauensbestätigung.")
     return 0
 
 

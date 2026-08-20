@@ -106,7 +106,7 @@ Abweichende Namen werden als Repository-Variablen gesetzt:
 BUDGETMANAGER_REPOSITORY = sloogy/Budgetmanager
 FPM_REPOSITORY           = sloogy/FPM
 BUDGETMANAGER_REF        = v2.2.61
-FPM_REF                  = v0.3.05
+FPM_REF                  = v0.3.05-rc.1
 ```
 
 Für den zentralen Build aus privaten Modulrepositories wird ein Fine-grained PAT als Secret benötigt:
@@ -115,7 +115,9 @@ Für den zentralen Build aus privaten Modulrepositories wird ein Fine-grained PA
 LIFEPLANNER_MODULES_TOKEN
 ```
 
-Der Token benötigt nur Leserechte auf BudgetManager und FPM. Der später an Endbenutzer verteilte Online-Installer sollte dagegen öffentliche Modul-Releases abfragen; er enthält keinen GitHub-Zugriffstoken. Die bestehenden Signaturschlüssel bleiben:
+Der Token benötigt nur Leserechte auf BudgetManager und FPM. Der später an Endbenutzer verteilte Online-Installer sollte dagegen öffentliche Modul-Releases abfragen; er enthält keinen GitHub-Zugriffstoken.
+
+Signierte spätere Releases verwenden:
 
 ```text
 LIFEPLANNER_UPDATE_PRIVATE_KEY_B64
@@ -127,22 +129,26 @@ LIFEPLANNER_UPDATE_PUBLIC_KEY_B64
 Ein Tag wie `lifeplanner-v0.5.0` baut aus den drei getrennten Checkouts:
 
 - `LifePlanner_0.5.0_Windows_Portable.zip`
-- `LifePlanner_0.5.0_Windows_Setup.exe`
 - `LifePlanner_Core_0.5.0_Windows_x86_64.zip`
+- `budgetmanager_2.2.61_Windows_x86_64.lpmodule`
+- `fpm_0.3.05_Windows_x86_64.lpmodule`
 - `lifeplanner-latest.json`
-- `lifeplanner-latest.json.sig`
 - `module-source-provenance.json`
+
+Der bewusste erste Release wird mit `--allow-unsigned` gebaut. Dieser Schalter muss ausdrücklich gesetzt sein; ein fehlender Schlüssel allein aktiviert den Modus nicht. Die erzeugten `.lpmodule` enthalten weiterhin den vollständigen Payload-SHA-256 und alle Struktur-, Versions- und Plattformmetadaten, aber keine `component.json.sig`.
+
+Der Windows-Setup wird in CI weiterhin kompiliert und als internes Actions-Artefakt geprüft, aber beim ersten Release nicht öffentlich angeboten: Sein automatischer GitHub-Bootstrap akzeptiert aus Sicherheitsgründen nur signierte Remote-Pakete. Endnutzer verwenden für diesen Release das Portable-Paket; die einzelnen unsignierten `.lpmodule` können zusätzlich lokal mit manueller Vertrauensbestätigung installiert werden.
 
 Der Windows-Installer enthält **keine eingebetteten BudgetManager- oder FPM-Binärdateien mehr**. Beim Öffnen der Seite „Programme auswählen“ fragt er die konfigurierten GitHub-Repositories ab, zeigt verfügbare `.lpmodule`-Releases an und lädt nur die ausgewählten Programme herunter. Mindestens ein Programm ist Pflicht.
 
-Jedes Modul-Repository veröffentlicht sein eigenes signiertes Paket:
+Der erste Release veröffentlicht die gebauten Modulpakete zusammen mit LifePlanner:
 
 ```text
-BudgetManager Release → budgetmanager_<Version>_Windows_x86_64.lpmodule
-FPM Release           → fpm_<Version>_Windows_x86_64.lpmodule
+LifePlanner Release → budgetmanager_<Version>_Windows_x86_64.lpmodule
+LifePlanner Release → fpm_<Version>_Windows_x86_64.lpmodule
 ```
 
-Der Setup akzeptiert ausschließlich Pakete, deren Ed25519-Signatur zum im LifePlanner-Core eingebetteten Public Key passt. Modul-ID, Version, Plattform, Core-Anforderung, Paketstruktur und Payload-Hash werden vor dem Dateitausch geprüft.
+Diese ausdrücklich unsignierten Erst-Release-Pakete werden lokal über die LifePlanner-Modulverwaltung installiert. LifePlanner zeigt Herkunft, Hash, Berechtigungen und Kompatibilität an und verlangt eine manuelle Vertrauensbestätigung mit **Abbrechen** als Standard. Der automatische GitHub-Bootstrap und Remote-Updates bleiben signaturpflichtig.
 
 ## Validierung
 
@@ -168,5 +174,6 @@ python tools/validate_release.py --with-modules
 ### Fedora/Linux-Release
 
 Der Workflow `.github/workflows/linux-release.yml` baut ein portables `tar.gz`/ZIP mit
-LifePlanner, BudgetManager und FPM sowie signierte `linux-x86_64`-Updater-Komponenten.
-Lokale Linux-Modulpakete können in der Modulverwaltung als `.lpmodule` installiert werden.
+LifePlanner, BudgetManager und FPM sowie ausdrücklich unsignierte `linux-x86_64`-Komponenten
+für den ersten Release. Lokale Linux-Modulpakete können nach manueller Vertrauensbestätigung
+in der Modulverwaltung als `.lpmodule` installiert werden.

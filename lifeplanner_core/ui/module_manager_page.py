@@ -117,7 +117,8 @@ class ModuleManagerPage(QWidget):
         root.addWidget(heading)
 
         subtitle = QLabel(
-            "Installiere signierte .lpmodule-Pakete, aktualisiere Module über den zentralen Katalog "
+            "Installiere signierte oder ausdrücklich vertrauenswürdige unsignierte .lpmodule-Pakete, "
+            "aktualisiere Module über den zentralen Katalog "
             "oder entferne ausschließlich die Programmdateien. Profildaten bleiben bei einer Deinstallation erhalten."
         )
         subtitle.setWordWrap(True)

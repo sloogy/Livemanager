@@ -11,7 +11,8 @@ Der Windows-Installer fragt die eigenständigen GitHub-Repositories nach verfüg
 - `LifePlannerInstallerBootstrap.spec`: eigener PyInstaller-Onefile-Helfer ohne Qt.
 - `installer-module-sources.json`: beim Release erzeugte Liste der vertrauenswürdigen Modul-Repositories.
 - dynamische Inno-Setup-Seite „Programme auswählen“.
-- eigene `.lpmodule`-Releaseworkflows in BudgetManager und FPM.
+- zentrale Windows-/Linux-Releaseworkflows bauen `.lpmodule` aus den gepinnten BudgetManager- und FPM-Quellen.
+- expliziter `--allow-unsigned`-Modus für den bewussten ersten Release; fehlende Schlüssel allein reichen nicht aus.
 
 ## Repositoryabfrage
 
@@ -27,6 +28,8 @@ Der Setup kopiert nur Coredateien. Anschließend installiert der Bootstrap alle 
 - Der eigentliche Inno-Setup-Build muss auf Windows erfolgen.
 - Eine reine Core-Installation ist im Online-Setup absichtlich nicht erlaubt.
 - Der Portable-Build bleibt für Offline-Szenarien separat.
+- Die unsignierten `.lpmodule`-Assets des ersten Releases sind nur für lokale Installation mit manueller Vertrauensbestätigung vorgesehen. Automatischer GitHub-Bootstrap und Remote-Updater bleiben signaturpflichtig.
+- Der Windows-Setup wird in CI gebaut, ist beim ersten unsignierten Release aber nur ein internes Actions-Artefakt; öffentlich ausgeliefert werden Portable-Pakete und lokale `.lpmodule`-Assets.
 
 ## Zusätzliche BudgetManager-Korrektur
 
