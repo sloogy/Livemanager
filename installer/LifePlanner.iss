@@ -51,7 +51,7 @@ var
   ModulePage: TWizardPage;
   StatusLabel: TNewStaticText;
   RefreshButton: TNewButton;
-  ModulePanel: TNewPanel;
+  ModulePanel: TPanel;
   ModuleList: TNewCheckListBox;
   ModuleIds: array of String;
   ModuleAvailable: array of Boolean;
@@ -66,7 +66,7 @@ procedure RecreateModulePanel;
 begin
   if ModulePanel <> nil then
     ModulePanel.Free;
-  ModulePanel := TNewPanel.Create(ModulePage);
+  ModulePanel := TPanel.Create(ModulePage);
   ModulePanel.Parent := ModulePage.Surface;
   ModulePanel.Left := 0;
   ModulePanel.Top := ScaleY(68);
