@@ -23,7 +23,7 @@ from tools.release_signing import ReleaseSigning, resolve_release_signing
 DIST = ROOT / "dist"
 BUILD = ROOT / "build"
 RELEASE = ROOT / "release"
-APP_VERSION = "0.5.6"
+APP_VERSION = "0.5.7"
 
 
 def run(*args: str, cwd: Path = ROOT, env: dict[str, str] | None = None) -> None:

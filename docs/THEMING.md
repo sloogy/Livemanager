@@ -101,7 +101,7 @@ Der Standalone-Betrieb ändert sich dadurch nicht.
 | --- | --- |
 | FreizeitManager | liest `shared_theme.json` bereits; keine Änderung nötig |
 | BudgetManager | liest das Hostprofil beim Start, lokale Wahl bleibt für Standalone erhalten |
-| FPM | ab 1.0.1: Hauptfenster, Seitenleiste, Tabellen, Eingaben und Schriftgröße folgen dem Profil; Inline-Styles einzelner Widgets noch nicht |
+| FPM | ab 1.0.3 vollständig, auch die Inline-Styles einzelner Widgets. Semantische Farben (Erfolg, Gefahr, Warnung) bleiben bewusst fest |
 
 ## Wirksamkeit
 

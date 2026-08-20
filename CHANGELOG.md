@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.7 – FPM vollständig gethemt
+
+- FPM 1.0.3: auch die Inline-Styles einzelner Widgets folgen dem zentralen Designprofil. Damit ist die Seite Darstellung für alle drei Module vollständig wirksam.
+- Semantische Farben (Erfolg, Gefahr, Warnung, Kategorie) bleiben in FPM bewusst fest, damit eine Löschen-Schaltfläche nicht grün wird.
+- Kompatibilitätsbasis auf FPM 1.0.3 angehoben.
+
 ## 0.5.6 – FPM 1.0.2
 
 - FPM 1.0.2: der Releasejob von 1.0.1 brach an einem i18n-Gate ab, das eine Diagnosemeldung für sichtbaren UI-Text hielt. Funktional identisch, 1.0.1 wurde nie veröffentlicht.
