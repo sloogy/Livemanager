@@ -24,7 +24,7 @@ from tools.release_signing import ReleaseSigning, resolve_release_signing
 DIST = ROOT / "dist"
 BUILD = ROOT / "build"
 RELEASE = ROOT / "release-linux"
-APP_VERSION = "0.5.4"
+APP_VERSION = "0.5.5"
 PLATFORM_KEY = "linux-x86_64"
 PLATFORM_LABEL = "Linux_x86_64"
 

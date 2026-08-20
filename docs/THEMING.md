@@ -46,7 +46,7 @@ verwenden es unverändert weiter, statt ein zweites daneben zu stellen.
   "schriftgroesse": 10,
   "farben": { "hintergrund_app": "#0d0d12", "akzent": "#7150f0" },
   "gesetzt_von": "lifeplanner",
-  "modul_version": "0.5.4",
+  "modul_version": "0.5.5",
   "profil": "default",
   "geaendert_am": "2026-08-20T10:00:00+00:00"
 }
@@ -101,7 +101,7 @@ Der Standalone-Betrieb ändert sich dadurch nicht.
 | --- | --- |
 | FreizeitManager | liest `shared_theme.json` bereits; keine Änderung nötig |
 | BudgetManager | liest das Hostprofil beim Start, lokale Wahl bleibt für Standalone erhalten |
-| FPM | liest das Hostprofil beim Start |
+| FPM | ab 1.0.1: Hauptfenster, Seitenleiste, Tabellen, Eingaben und Schriftgröße folgen dem Profil; Inline-Styles einzelner Widgets noch nicht |
 
 ## Wirksamkeit
 

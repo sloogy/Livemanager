@@ -37,7 +37,7 @@ def test_lock_has_independent_sources_per_module():
     assert specs["fpm"].default_repository == "sloogy/FPM"
     assert specs["freizeitmanager"].default_repository == "sloogy/Kontaktmanager"
     assert specs["budgetmanager"].version == "2.2.63"
-    assert specs["fpm"].version == "1.0.0"
+    assert specs["fpm"].version == "1.0.1"
     assert specs["freizeitmanager"].version == "0.1.1"
 
 

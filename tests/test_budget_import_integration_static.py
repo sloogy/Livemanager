@@ -8,7 +8,7 @@ def test_multi_repo_lock_pins_integrated_module_versions():
     lock = json.loads((ROOT / "dependencies/modules.lock.json").read_text(encoding="utf-8"))
     modules = {item["id"]: item for item in lock["modules"]}
     assert modules["budgetmanager"]["version"] == "2.2.63"
-    assert modules["fpm"]["version"] == "1.0.0"
+    assert modules["fpm"]["version"] == "1.0.1"
     assert modules["budgetmanager"]["build_spec"] == "BudgetManager.spec"
     assert modules["fpm"]["build_spec"] == "FPM.spec"
 

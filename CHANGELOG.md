@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.5 – FPM folgt der zentralen Darstellung
+
+- FPM 1.0.1 übernimmt das zentral gewählte Designprofil für Hauptfenster, Seitenleiste, Toolbar, Tabellen, Eingabefelder, Karten und Dialoge; die Schriftgröße des Profils wirkt als Skalierungsfaktor.
+- Damit folgen alle drei Module der Seite Darstellung. Inline-Styles einzelner FPM-Widgets führen weiterhin eigene Farben.
+- Kompatibilitätsbasis auf FPM 1.0.1 angehoben.
+
 ## 0.5.4 – Zentrale Darstellung und Modulstart aus der Quelle
 
 - **Modulstart repariert.** `build_command()` nutzte die in `module.json` deklarierte Programmdatei nur, wenn der Host selbst eingefroren lief. Aus der Quelle gestartet fiel er auf `source_entry` zurück und meldete `Moduleinstieg fehlt: .../main.py` — eine Datei, die ein installiertes Binärmodul gar nicht mitbringt. Betroffen waren alle Module gleichermaßen. Die Programmdatei wird jetzt verwendet, sobald sie vorhanden ist; `source_entry` bleibt der Weg für Entwicklungsquellen.
