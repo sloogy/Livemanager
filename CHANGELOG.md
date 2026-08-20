@@ -6,6 +6,7 @@
 - Das Execute-Bit wird jetzt aus dem Archiv übernommen, indem die Leserechte gespiegelt werden; die umask bleibt wirksam und setuid/setgid/sticky werden nie übernommen.
 - Zusätzlich stellt der Modulinstaller die in `module.json` deklarierte Programmdatei unabhängig vom Archivinhalt ausführbar. Das fängt Pakete ab, die das Bit bereits beim Bauen verloren haben – aktuell das veröffentlichte `fpm_0.3.05_Linux_x86_64.lpmodule`.
 - Der Modulstart repariert veraltete Installationen einmalig selbst und meldet sonst einen klaren Fehler statt eines rohen `Errno 13`.
+- Der GitHub-Katalog kennt jetzt eine Mindestversion je Modul und bietet ältere Releases nicht mehr an, auch wenn sie ein passendes Asset mitbringen. BudgetManager ist auf 2.2.62 festgelegt, weil die Übersicht davor unter Fedora/Wayland in `CompactChart` abbrach; FPM auf 0.3.05.
 
 - Windows-Release repariert: `_local_path()` im zentralen Updater hat einen Windows-Laufwerksbuchstaben (`C:\…`) als URL-Schema gelesen und lokale Update-Dateien deshalb als unsichere Remote-URLs abgelehnt.
 - Zwei Testfälle verglichen Pfade mit hartkodiertem POSIX-Trennzeichen und schlugen unter Windows fehl; sie prüfen jetzt plattformneutral.

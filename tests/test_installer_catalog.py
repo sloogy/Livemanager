@@ -13,6 +13,7 @@ from lifeplanner_core.installer_catalog import (
     read_catalog_ini,
     write_catalog_ini,
 )
+from lifeplanner_core.repositories import TRUSTED_MODULE_REPOSITORIES
 
 
 class _Response:
@@ -264,3 +265,47 @@ def test_generated_installer_sources_use_separate_repository_variables() -> None
     assert '"BUDGETMANAGER_REPOSITORY"' in build
     assert '"FPM_REPOSITORY"' in build
     assert "github.repository_owner" not in build  # GitHub expression belongs only in the workflow.
+
+
+def test_release_below_minimum_version_is_not_offered() -> None:
+    # Die BudgetManager-Übersicht brach vor 2.2.62 unter Fedora/Wayland ab;
+    # ältere Releases dürfen im Katalog nicht mehr auftauchen.
+    def _release(version: str) -> dict:
+        return {
+            "tag_name": f"v{version}",
+            "draft": False,
+            "prerelease": False,
+            "assets": [
+                {
+                    "name": f"budgetmanager_{version}_Windows_x86_64.lpmodule",
+                    "size": 1234,
+                    "browser_download_url": (
+                        f"https://github.com/example/BudgetManager/releases/download/"
+                        f"v{version}/budgetmanager_{version}_Windows_x86_64.lpmodule"
+                    ),
+                }
+            ],
+        }
+
+    source = ModuleSource(
+        module_id="budgetmanager",
+        name="BudgetManager",
+        repository="example/BudgetManager",
+        asset_pattern=r"budgetmanager_(?P<version>[0-9.]+)_Windows_x86_64\.lpmodule",
+        minimum_version="2.2.62",
+    )
+
+    # Nur zu alte Releases -> nichts anbieten.
+    release = query_module_release(source, session=_Session([_release("2.2.61")]))
+    assert release.available is False
+
+    # Ein zu altes Release überspringen und das tragfähige nehmen.
+    release = query_module_release(source, session=_Session([_release("2.2.61"), _release("2.2.62")]))
+    assert release.available is True
+    assert release.version == "2.2.62"
+
+
+def test_trusted_repositories_pin_the_supported_module_baseline() -> None:
+    minimums = {item.module_id: item.minimum_version for item in TRUSTED_MODULE_REPOSITORIES}
+    assert minimums["budgetmanager"] == "2.2.62"
+    assert minimums["fpm"] == "0.3.05"

@@ -18,6 +18,9 @@ class TrustedModuleRepository:
     name: str
     repository: str
     description: str
+    # Älteste Version, die im Host tragfähig ist. Ältere Releases werden im
+    # Katalog nicht angeboten, auch wenn sie ein passendes Asset mitbringen.
+    minimum_version: str = ""
 
 
 TRUSTED_MODULE_REPOSITORIES = (
@@ -26,12 +29,15 @@ TRUSTED_MODULE_REPOSITORIES = (
         name="BudgetManager",
         repository=BUDGETMANAGER_REPOSITORY,
         description="Budget, Buchungen, Forecasts, Sparziele und Monatsabschluss.",
+        # Vor 2.2.62 brach die Übersicht unter Fedora/Wayland in CompactChart ab.
+        minimum_version="2.2.62",
     ),
     TrustedModuleRepository(
         module_id="fpm",
         name="FPM - Fountain Pen Manager",
         repository=FPM_REPOSITORY,
         description="Füller, Tinten, Federn, Papier, Rotation und Sammlungswissen.",
+        minimum_version="0.3.05",
     ),
 )
 

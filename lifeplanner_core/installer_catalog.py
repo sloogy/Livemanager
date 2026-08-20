@@ -11,6 +11,7 @@ from typing import Any, Iterable
 from urllib.parse import urlparse
 
 import requests
+from packaging.version import InvalidVersion, Version
 
 from .github_auth import github_token
 from .repositories import TRUSTED_MODULE_REPOSITORIES, module_asset_pattern
@@ -36,6 +37,7 @@ class ModuleSource:
     description: str = ""
     required_host: str = ">=0.5.0"
     allow_prerelease: bool = False
+    minimum_version: str = ""
 
 
 @dataclass(frozen=True)
@@ -64,6 +66,7 @@ def default_module_sources() -> tuple[ModuleSource, ...]:
             description=item.description,
             required_host=">=0.5.0",
             allow_prerelease=False,
+            minimum_version=item.minimum_version,
         )
         for item in TRUSTED_MODULE_REPOSITORIES
     )
@@ -165,6 +168,16 @@ def load_module_sources(path: Path | str) -> tuple[ModuleSource, ...]:
     return tuple(result)
 
 
+def _meets_minimum_version(version: str, minimum: str) -> bool:
+    if not minimum:
+        return True
+    try:
+        return Version(version) >= Version(minimum)
+    except InvalidVersion:
+        # Ohne verwertbare Version lieber nichts anbieten als eine zu alte.
+        return False
+
+
 def _safe_description(value: Any, fallback: str) -> str:
     text = str(value or "").replace("\r", " ").replace("\n", " ").strip()
     text = re.sub(r"\s+", " ", text)
@@ -251,6 +264,8 @@ def query_module_release(
             version = str(groups.get("version") or "").strip()
             if not version:
                 version = str(release.get("tag_name", "")).strip().lstrip("vV")
+            if not _meets_minimum_version(version, source.minimum_version):
+                continue
             return ModuleRelease(
                 module_id=source.module_id,
                 name=source.name,
