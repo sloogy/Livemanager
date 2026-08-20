@@ -13,6 +13,7 @@ from urllib.parse import urlparse
 import requests
 from packaging.version import InvalidVersion, Version
 
+from . import APP_VERSION
 from .github_auth import github_token
 from .repositories import TRUSTED_MODULE_REPOSITORIES, module_asset_pattern
 
@@ -89,7 +90,7 @@ def download_release_asset(
     temp = destination.with_suffix(destination.suffix + ".part")
     headers = {
         "Accept": "application/octet-stream",
-        "User-Agent": "LifePlanner/0.5.7",
+        "User-Agent": f"LifePlanner/{APP_VERSION}",
     }
     token = github_token()
     if token:
@@ -203,7 +204,7 @@ def query_module_release(
     url = f"https://api.github.com/repos/{source.repository}/releases?per_page=20"
     headers = {
         "Accept": "application/vnd.github+json",
-        "User-Agent": "LifePlanner-Installer/0.5.7",
+        "User-Agent": f"LifePlanner-Installer/{APP_VERSION}",
     }
     token = github_token()
     if token:

@@ -262,6 +262,10 @@ def apply_plan(plan_path: Path) -> dict[str, Any]:
                 existed = target.exists()
                 if existed:
                     _replace_path(target, op_old)
+                # Eine Core-Installation ohne Module bringt kein modules/ mit.
+                # Ohne diesen Ordner scheitert os.replace mit ENOENT und das
+                # erste Modul liesse sich nie installieren.
+                target.parent.mkdir(parents=True, exist_ok=True)
                 _replace_path(op_incoming, target)
                 changed.append({"kind": "module", "action": "replace", "target": target, "old": op_old, "existed": existed})
             else:

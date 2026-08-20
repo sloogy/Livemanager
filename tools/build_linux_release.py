@@ -21,10 +21,17 @@ from tools.module_sources import (
 )
 from tools.release_signing import ReleaseSigning, resolve_release_signing
 
+
+def _core_version() -> str:
+    """Die Version steht in lifeplanner_core - hier nur gelesen."""
+    from lifeplanner_core import APP_VERSION as core_version
+
+    return core_version
+
 DIST = ROOT / "dist"
 BUILD = ROOT / "build"
 RELEASE = ROOT / "release-linux"
-APP_VERSION = "0.5.7"
+APP_VERSION = _core_version()
 PLATFORM_KEY = "linux-x86_64"
 PLATFORM_LABEL = "Linux_x86_64"
 

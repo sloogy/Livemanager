@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.8 – Das erste Modul lässt sich wieder installieren
+
+- **Modulinstallation repariert.** Unter Linux meldete 0.5.7 nach jedem Installationsversuch `Modulordner fehlt: …/payload/modules`. `apply_plan.py` verschiebt ein Modul mit `os.replace` nach `modules/<id>`, legte den Ordner `modules/` aber nie an — und eine Core-Installation ohne Module bringt keinen leeren Ordner mit. Damit scheiterte das **erste** Modul jeder frischen Installation zuverlässig, egal welches; zurück blieben nur `.__lifeplanner_update_*`-Reste. Das Zielverzeichnis wird jetzt angelegt.
+- Ein fehlender Modulordner ist kein Fehler mehr, sondern schlicht „noch keine Module installiert“. Bisher warnte der Start mit einer Meldung, die einen Defekt nahelegte, wo keiner war.
+- **Die Version steht nur noch an einer Stelle.** `tools/build_release.py`, `tools/build_linux_release.py` und die drei User-Agent-Zeichenketten lesen sie aus `lifeplanner_core.APP_VERSION`, statt sie zu wiederholen; der Windows-Paketest prüft gegen dieselbe Quelle statt gegen eine eingetippte Zahl.
+
 ## 0.5.7 – FPM vollständig gethemt
 
 - FPM 1.0.3: auch die Inline-Styles einzelner Widgets folgen dem zentralen Designprofil. Damit ist die Seite Darstellung für alle drei Module vollständig wirksam.

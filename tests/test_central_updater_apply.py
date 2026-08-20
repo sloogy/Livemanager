@@ -133,3 +133,39 @@ def test_remove_module_preserves_profile_data_and_creates_rollback(tmp_path: Pat
     assert result["components"][0]["action"] == "remove"
     assert result["program_backups"]
     assert result["profile_backups"]
+
+
+def test_first_module_installs_when_app_has_no_modules_folder(tmp_path: Path) -> None:
+    """Eine Core-Installation bringt kein leeres modules/ mit.
+
+    Genau daran scheiterte 0.5.7 unter Linux: os.replace lief gegen ENOENT und
+    kein Modul liess sich je installieren.
+    """
+    app = tmp_path / "app"
+    updates = tmp_path / "data" / "updates"
+    app.mkdir(parents=True)
+    updates.mkdir(parents=True)
+    (app / "LifePlanner").write_text("core")
+    assert not (app / "modules").exists()
+
+    payload = updates / "staging/fpm/payload"
+    payload.mkdir(parents=True)
+    (payload / "module.json").write_text("new module")
+
+    plan = {
+        "schema": "lifeplanner.update-plan.v1",
+        "app_root": str(app),
+        "update_root": str(updates),
+        "wait_pids": [],
+        "restart_command": [],
+        "backup_profiles": False,
+        "operations": [_operation("fpm", "module", payload, "modules/fpm", "1.0.2")],
+    }
+    plan_path = updates / "plan.json"
+    plan_path.write_text(json.dumps(plan))
+
+    result = apply_plan(plan_path)
+    assert result["success"] is True
+    assert (app / "modules" / "fpm" / "module.json").read_text() == "new module"
+    # Der Transaktionsordner bleibt nur im Fehlerfall liegen.
+    assert not list(app.glob(".__lifeplanner_update_*"))

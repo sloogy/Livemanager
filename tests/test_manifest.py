@@ -32,3 +32,10 @@ def test_discovers_installed_modules_without_vendored_sources(tmp_path):
     assert result.errors == ()
     assert [m.module_id for m in result.modules] == ["budgetmanager", "fpm"]
     assert all(m.source_entry == "main.py" for m in result.modules)
+
+
+def test_missing_modules_folder_is_not_an_error(tmp_path):
+    """Ein Core ohne installierte Module ist ein gueltiger Zustand."""
+    result = discover_modules(tmp_path / "modules")
+    assert result.modules == ()
+    assert result.errors == ()

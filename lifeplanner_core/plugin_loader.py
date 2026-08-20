@@ -19,7 +19,10 @@ def discover_modules(base: Path | None = None) -> PluginLoadResult:
     errors: list[str] = []
     seen: set[str] = set()
     if not root.is_dir():
-        return PluginLoadResult((), (f"Modulordner fehlt: {root}",))
+        # Ein Core ohne installierte Module ist ein gueltiger Zustand - der
+        # Ordner entsteht erst mit dem ersten Modul. Eine Fehlermeldung beim
+        # Start waere hier eine Falschmeldung.
+        return PluginLoadResult((), ())
     for manifest_path in sorted(root.glob("*/module.json")):
         try:
             manifest = ModuleManifest.load(manifest_path)

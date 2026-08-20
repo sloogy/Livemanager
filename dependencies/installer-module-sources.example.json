@@ -1,6 +1,6 @@
 {
   "schema": "lifeplanner.installer-sources.v1",
-  "generated_for": "0.5.7",
+  "generated_for": "0.5.8",
   "modules": [
     {
       "id": "budgetmanager",
