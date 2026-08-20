@@ -31,6 +31,8 @@ Der Installer durchsucht nicht beliebige GitHub-Projekte. Die vertrauenswürdige
 
 Unsignierte Remote-Pakete werden ohne Ausnahme abgelehnt.
 
+Der bewusst unsignierte erste LifePlanner-Release ändert diese Grenze nicht: Seine `.lpmodule`-Assets werden vom LifePlanner-Release heruntergeladen und lokal in der Modulverwaltung geöffnet. Dort ist eine sichtbare manuelle Vertrauensbestätigung erforderlich. `--allow-unsigned` ist ein Build-Schalter und kein stilles Vertrauens-Override für den GitHub-Bootstrap.
+
 ## Modulquellen
 
 Beim Windows-Release erzeugt `tools/build_release.py` aus `dependencies/modules.lock.json` die Datei:
@@ -55,7 +57,7 @@ FPM_REPOSITORY=sloogy/FPM
 
 ## Verpflichtung der Modul-Repositories
 
-Jedes Modulrepository besitzt einen eigenen Workflow `lifeplanner-module-release.yml`. Ein Versionstag baut das jeweilige Windows-Programm und veröffentlicht ein signiertes Asset nach folgendem Namensvertrag:
+Für spätere vollautomatische Online-Installationen veröffentlicht jedes Modulrepository ein signiertes Asset nach folgendem Namensvertrag:
 
 ```text
 <module-id>_<version>_Windows_x86_64.lpmodule
@@ -68,7 +70,7 @@ budgetmanager_2.2.56_Windows_x86_64.lpmodule
 fpm_0.3.04_Windows_x86_64.lpmodule
 ```
 
-Alle Repositories müssen dasselbe Secret `LIFEPLANNER_UPDATE_PRIVATE_KEY_B64` verwenden. Der zugehörige Public Key wird beim LifePlanner-Build in Core und Bootstrap eingebettet.
+Alle Repositories müssen dafür dasselbe Secret `LIFEPLANNER_UPDATE_PRIVATE_KEY_B64` verwenden. Der zugehörige Public Key wird beim LifePlanner-Build in Core und Bootstrap eingebettet. Für den ersten Release fehlen diese Secrets bewusst; dessen zentrale Releaseworkflows erzeugen die lokalen `.lpmodule`-Assets mit `--allow-unsigned`.
 
 ## Öffentliche und private Repositories
 

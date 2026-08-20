@@ -23,8 +23,13 @@ def test_windows_release_pipeline_stages_all_three_apps_from_separate_repos():
     assert "windows-latest" in workflow
     assert "Checkout BudgetManager repository" in workflow
     assert "Checkout FPM repository" in workflow
-    assert "LifePlanner_0.5.0_Windows_Portable.zip" in workflow
-    assert "LifePlanner_0.5.0_Windows_Setup" in installer
+    assert "v0.3.05" in workflow
+    assert "--allow-unsigned" in workflow
+    assert "First release must stay explicitly unsigned" in workflow
+    assert "LifePlanner_0.5.1_Windows_Portable.zip" in workflow
+    publish_line = next(line for line in workflow.splitlines() if "gh release upload" in line)
+    assert "LifePlanner_0.5.1_Windows_Setup.exe" in publish_line
+    assert "LifePlanner_0.5.1_Windows_Setup" in installer
     assert "PrivilegesRequired=lowest" in installer
 
 
@@ -48,3 +53,5 @@ def test_module_manager_is_connected_to_shell() -> None:
     assert "Modulpaket installieren" in manager
     assert "Modul deinstallieren" in manager
     assert "Profildaten" in manager
+    assert "Unsigniertes Modulpaket" in manager
+    assert "QMessageBox.StandardButton.Cancel" in manager

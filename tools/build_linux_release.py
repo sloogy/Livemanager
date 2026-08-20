@@ -14,11 +14,12 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from tools.module_sources import ModuleSourceError, ResolvedModuleSource, resolve_module_sources
+from tools.release_signing import ReleaseSigning, resolve_release_signing
 
 DIST = ROOT / "dist"
 BUILD = ROOT / "build"
 RELEASE = ROOT / "release-linux"
-APP_VERSION = "0.5.0"
+APP_VERSION = "0.5.1"
 PLATFORM_KEY = "linux-x86_64"
 PLATFORM_LABEL = "Linux_x86_64"
 
@@ -38,7 +39,7 @@ def sha256(path: Path) -> str:
 
 def package_component(*, payload: Path, component_id: str, name: str, version: str,
                       kind: str, output: Path, requires_host: str = "",
-                      description: str = "") -> Path:
+                      description: str = "", private_key_b64: str) -> Path:
     from lifeplanner_core.updater.package_builder import build_component_package
     return build_component_package(
         payload=payload,
@@ -50,21 +51,22 @@ def package_component(*, payload: Path, component_id: str, name: str, version: s
         requires_host=requires_host,
         description=description,
         platforms=(PLATFORM_KEY,),
-        private_key_b64=os.environ.get("LIFEPLANNER_UPDATE_PRIVATE_KEY_B64", "").strip(),
+        private_key_b64=private_key_b64,
     )
 
 
-def materialize_module_public_key(source: ResolvedModuleSource) -> None:
+def materialize_module_public_key(source: ResolvedModuleSource, *, signing: ReleaseSigning) -> None:
+    if signing.unsigned:
+        print(f"WARNUNG: {source.spec.name}: kein Public-Key im ausdrücklichen --allow-unsigned-Modus.")
+        return
     helper = source.path / "tools" / "materialize_update_public_key.py"
     if helper.is_file():
-        public_key = os.environ.get("LIFEPLANNER_UPDATE_PUBLIC_KEY_B64", "").strip()
         child_env = dict(os.environ)
-        if public_key:
-            child_env.setdefault("UPDATE_SIGNING_PUBLIC_KEY_B64", public_key)
+        child_env.setdefault("UPDATE_SIGNING_PUBLIC_KEY_B64", signing.public_key_b64)
         run(sys.executable, str(helper), cwd=source.path, env=child_env)
 
 
-def build_update_assets(shell: Path) -> None:
+def build_update_assets(shell: Path, *, signing: ReleaseSigning) -> None:
     update_dir = RELEASE / "update-assets"
     update_dir.mkdir(parents=True, exist_ok=True)
     core_payload = RELEASE / ".core-payload"
@@ -106,7 +108,7 @@ def build_update_assets(shell: Path) -> None:
         output = package_component(
             payload=payload, component_id=component_id, name=name, version=version,
             kind=kind, output=update_dir / filename, requires_host=requires_host,
-            description=description,
+            description=description, private_key_b64=signing.private_key_b64,
         )
         manifest_components[component_id] = {
             "id": component_id, "name": name, "version": version, "kind": kind,
@@ -125,11 +127,14 @@ def build_update_assets(shell: Path) -> None:
     manifest_path = update_dir / "lifeplanner-latest-linux.json"
     manifest_bytes = (json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode("utf-8")
     manifest_path.write_bytes(manifest_bytes)
-    private_key = os.environ.get("LIFEPLANNER_UPDATE_PRIVATE_KEY_B64", "").strip()
-    if not private_key:
-        raise RuntimeError("LIFEPLANNER_UPDATE_PRIVATE_KEY_B64 fehlt; Linux-Remote-Release bleibt nicht unsigniert.")
-    from lifeplanner_core.updater.signing import sign_manifest
-    (update_dir / "lifeplanner-latest-linux.json.sig").write_bytes(sign_manifest(manifest_bytes, private_key))
+    if signing.private_key_b64:
+        from lifeplanner_core.updater.signing import sign_manifest
+
+        (update_dir / "lifeplanner-latest-linux.json.sig").write_bytes(
+            sign_manifest(manifest_bytes, signing.private_key_b64)
+        )
+    else:
+        print("WARNUNG: --allow-unsigned aktiv; Pakete und Update-Manifest bleiben unsigniert.")
     shutil.rmtree(core_payload, ignore_errors=True)
 
 
@@ -146,9 +151,15 @@ def write_source_provenance(sources: dict[str, ResolvedModuleSource]) -> None:
     )
 
 
-def build(*, budgetmanager_source: Path | None = None, fpm_source: Path | None = None) -> None:
+def build(
+    *,
+    budgetmanager_source: Path | None = None,
+    fpm_source: Path | None = None,
+    allow_unsigned: bool = False,
+) -> None:
     if not sys.platform.startswith("linux"):
         raise SystemExit("Der Linux-Release muss auf Linux/GitHub Actions ubuntu-latest gebaut werden.")
+    signing = resolve_release_signing(allow_unsigned=allow_unsigned)
     explicit = {key: value for key, value in {
         "budgetmanager": budgetmanager_source, "fpm": fpm_source,
     }.items() if value is not None}
@@ -164,8 +175,8 @@ def build(*, budgetmanager_source: Path | None = None, fpm_source: Path | None =
         shutil.rmtree(path, ignore_errors=True)
     RELEASE.mkdir(parents=True)
     budgetmanager, fpm = sources["budgetmanager"], sources["fpm"]
-    materialize_module_public_key(budgetmanager)
-    materialize_module_public_key(fpm)
+    materialize_module_public_key(budgetmanager, signing=signing)
+    materialize_module_public_key(fpm, signing=signing)
     run(sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", budgetmanager.spec.build_spec, cwd=budgetmanager.path)
     run(sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", fpm.spec.build_spec, cwd=fpm.path)
     run(sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", "LifePlanner.spec", cwd=ROOT)
@@ -192,7 +203,7 @@ def build(*, budgetmanager_source: Path | None = None, fpm_source: Path | None =
     base = RELEASE / f"LifePlanner_{APP_VERSION}_Linux_x86_64_Portable"
     shutil.make_archive(str(base), "gztar", RELEASE, portable.name)
     shutil.make_archive(str(base), "zip", RELEASE, portable.name)
-    build_update_assets(shell)
+    build_update_assets(shell, signing=signing)
     write_source_provenance(sources)
     print(f"Linux Portable: {base}.tar.gz")
 
@@ -201,5 +212,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Baut den Fedora/Linux-LifePlanner aus drei getrennten Git-Repositories.")
     parser.add_argument("--budgetmanager-source", type=Path)
     parser.add_argument("--fpm-source", type=Path)
+    parser.add_argument(
+        "--allow-unsigned",
+        action="store_true",
+        help="Baut den bewussten ersten Release ohne Paket- und Manifest-Signaturen.",
+    )
     args = parser.parse_args()
-    build(budgetmanager_source=args.budgetmanager_source, fpm_source=args.fpm_source)
+    build(
+        budgetmanager_source=args.budgetmanager_source,
+        fpm_source=args.fpm_source,
+        allow_unsigned=args.allow_unsigned,
+    )

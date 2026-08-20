@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_multi_repo_lock_pins_integrated_module_versions():
     lock = json.loads((ROOT / "dependencies/modules.lock.json").read_text(encoding="utf-8"))
     modules = {item["id"]: item for item in lock["modules"]}
-    assert modules["budgetmanager"]["version"] == "2.2.61"
+    assert modules["budgetmanager"]["version"] == "2.2.62"
     assert modules["fpm"]["version"] == "0.3.05"
     assert modules["budgetmanager"]["build_spec"] == "BudgetManager.spec"
     assert modules["fpm"]["build_spec"] == "FPM.spec"

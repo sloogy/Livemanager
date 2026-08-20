@@ -56,13 +56,15 @@ Die Signatur ist Base64-kodiert und wird gegen den beim Build eingebetteten öff
 
 Der private Schlüssel existiert ausschließlich als geschütztes Release-Secret.
 
+Der bewusste erste Release besitzt noch keinen Vertrauensanker und wird deshalb mit `--allow-unsigned` gebaut. Seine Manifeste und Komponenten dienen als manuell herunterladbare Releaseartefakte; der automatische Remote-Updater akzeptiert sie absichtlich nicht. Unsignierte `.lpmodule` werden ausschließlich über die lokale Modulverwaltung mit manueller Vertrauensbestätigung installiert.
+
 ## Komponentenarchiv
 
 Jedes ZIP besitzt exakt diese logische Struktur:
 
 ```text
 component.json
-component.json.sig   # bei Releasepaketen
+component.json.sig   # bei signierten Releasepaketen; fehlt im ausdrücklichen Erst-Release-Modus
 payload/
 └── …
 ```

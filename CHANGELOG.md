@@ -1,16 +1,24 @@
-
-## Module compatibility hardening
-
-- Canonical GitHub repositories integrated: `sloogy/Budgetmanager` and `sloogy/FPM`.
-- Compatibility baseline updated to BudgetManager 2.2.61 and FPM 0.3.05.
-- Installer/release generation now works with the canonical repository slugs without requiring repository-owner variables.
-- Environment/repository variables remain supported as explicit overrides.
-- Added transient private GitHub token-file support and compatibility documentation.
-
 # Changelog
 
+## 0.5.1 – Windows-Release und Modulkompatibilität
+
+- Windows-Release repariert: `_local_path()` im zentralen Updater hat einen Windows-Laufwerksbuchstaben (`C:\…`) als URL-Schema gelesen und lokale Update-Dateien deshalb als unsichere Remote-URLs abgelehnt.
+- Zwei Testfälle verglichen Pfade mit hartkodiertem POSIX-Trennzeichen und schlugen unter Windows fehl; sie prüfen jetzt plattformneutral.
+- Kompatibilitätsbasis auf BudgetManager 2.2.62 und FPM 0.3.05 (final statt `rc.1`) angehoben.
+- `default_sibling` für BudgetManager auf die tatsächliche Ordnerschreibweise `../Budgetmanager` korrigiert; lokale Builds auf Linux fanden die Modulquelle vorher nicht.
+- `LifePlanner_0.5.1_Windows_Setup.exe` wird jetzt als Release-Asset veröffentlicht statt nur als internes CI-Artefakt. Sie bleibt unsigniert; SmartScreen warnt entsprechend.
+- Kanonische GitHub-Repositories integriert: `sloogy/Budgetmanager` und `sloogy/FPM`.
+- Installer-/Releasegenerierung arbeitet mit den kanonischen Repository-Slugs ohne Repository-Owner-Variablen.
+- Umgebungs-/Repositoryvariablen bleiben als ausdrückliche Overrides unterstützt.
+- Transiente private GitHub-Token-Dateien und Kompatibilitätsdokumentation ergänzt.
+
 ## 0.5.0 – GitHub-Modulbootstrap im Windows-Installer
-- Linux multi-repository release with signed Fedora/Linux portable and updater assets.
+- Erster Release kann nur über den ausdrücklichen Schalter `--allow-unsigned` ohne Schlüssel gebaut werden.
+- Unsignierte Windows-/Linux-`.lpmodule` behalten Payload-Hash-, Struktur-, Versions- und Plattformprüfung.
+- Lokale Installation unsignierter Pakete verlangt eine manuelle Vertrauensbestätigung; Standardaktion ist Abbrechen.
+- Automatischer GitHub-Bootstrap und Remote-Updates bleiben signaturpflichtig.
+- Der Windows-Setup bleibt im ersten unsigned Release ein internes CI-Artefakt; öffentlich ausgeliefert werden Portable-Pakete und lokale `.lpmodule`-Assets.
+- Linux multi-repository release with Fedora/Linux portable and local module assets.
 - Hardened read-only GitHub token-file handling for private repositories.
 
 - Windows-Setup enthält nur den LifePlanner-Core und fragt die eigenständigen Modul-Repositories zur Laufzeit ab.
@@ -20,7 +28,7 @@
 - Nur signierte Pakete mit gültigem Payload-Hash, passender Modul-ID, Version, Plattform und Core-Anforderung werden installiert.
 - Mehrere Module werden in einer gemeinsamen Transaktion installiert und bei Fehlern zurückgerollt.
 - Separater headless `LifePlannerInstallerBootstrap.exe` für Repositoryabfrage, Download und Installation ergänzt.
-- BudgetManager- und FPM-Repositories veröffentlichen ihre eigenen signierten `.lpmodule`-Assets.
+- Der erste LifePlanner-Release veröffentlicht BudgetManager- und FPM-`.lpmodule` bewusst unsigned für lokale Installation.
 
 ## 0.4.1 – Getrennte Git-Repositories
 

@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 
 from lifeplanner_core.plugin_loader import discover_modules
@@ -37,6 +38,6 @@ def test_module_environment_is_profile_scoped(monkeypatch, tmp_path):
     manager = ModuleProcessManager()
     budget_env = manager.build_environment(modules["budgetmanager"], "default", {})
     fpm_env = manager.build_environment(modules["fpm"], "default", {})
-    assert budget_env["BUDGETMANAGER_DATA_DIR"].endswith("modules/budgetmanager")
-    assert fpm_env["FPM_DATA_DIR"].endswith("modules/fpm")
+    assert budget_env["BUDGETMANAGER_DATA_DIR"].endswith(os.path.join("modules", "budgetmanager"))
+    assert fpm_env["FPM_DATA_DIR"].endswith(os.path.join("modules", "fpm"))
     assert budget_env["LIFEPLANNER_BRIDGE_DIR"] == fpm_env["LIFEPLANNER_BRIDGE_DIR"]

@@ -86,7 +86,7 @@ def download_release_asset(
     temp = destination.with_suffix(destination.suffix + ".part")
     headers = {
         "Accept": "application/octet-stream",
-        "User-Agent": "LifePlanner/0.5.0",
+        "User-Agent": "LifePlanner/0.5.1",
     }
     token = github_token()
     if token:
@@ -190,7 +190,7 @@ def query_module_release(
     url = f"https://api.github.com/repos/{source.repository}/releases?per_page=20"
     headers = {
         "Accept": "application/vnd.github+json",
-        "User-Agent": "LifePlanner-Installer/0.5.0",
+        "User-Agent": "LifePlanner-Installer/0.5.1",
     }
     token = github_token()
     if token:

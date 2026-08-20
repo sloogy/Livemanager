@@ -149,6 +149,7 @@ def test_installer_enforces_one_program_and_uses_github_catalog() -> None:
     root = Path(__file__).resolve().parents[1]
     installer = (root / "installer" / "LifePlanner.iss").read_text(encoding="utf-8")
     build = (root / "tools" / "build_release.py").read_text(encoding="utf-8")
+    bootstrap = (root / "lifeplanner_core" / "installer_bootstrap.py").read_text(encoding="utf-8")
     assert "Mindestens ein Programm" in installer
     assert "CheckedModuleCount < 1" in installer
     assert "catalog --sources" in installer
@@ -156,6 +157,8 @@ def test_installer_enforces_one_program_and_uses_github_catalog() -> None:
     assert "Excludes: \"modules\\*" in installer
     assert "_write_installer_sources" in build
     assert "LifePlannerInstallerBootstrap.spec" in build
+    assert "if not info.signed" in bootstrap
+    assert "Remote-Modul" in bootstrap and "wird abgelehnt" in bootstrap
 
 
 def test_bootstrap_installs_selected_signed_module_transactionally(tmp_path: Path, monkeypatch) -> None:

@@ -1,11 +1,11 @@
-# Modulkompatibilität LifePlanner 0.5.0
+# Modulkompatibilität LifePlanner 0.5.1
 
 Freigegebene Kombination:
 
-- BudgetManager 2.2.61
+- BudgetManager 2.2.62
 - FPM 0.3.05
 
-Beide Module besitzen `module.json`, profilbezogene Datenpfade, die gemeinsame JSONL-Bridge und eigene signierte Windows-/Linux-`.lpmodule`-Workflows. Beim Start durch LifePlanner ist der interne Modul-Updater deaktiviert.
+Beide Module besitzen `module.json`, profilbezogene Datenpfade und die gemeinsame JSONL-Bridge. Die LifePlanner-Releaseworkflows bauen daraus Windows-/Linux-`.lpmodule`-Assets. Beim ersten Release sind diese über den ausdrücklichen Schalter `--allow-unsigned` nicht signiert und müssen lokal manuell bestätigt werden. Beim Start durch LifePlanner ist der interne Modul-Updater deaktiviert.
 
 ## Private GitHub-Repositories
 
@@ -26,6 +26,6 @@ Unter Linux muss die Datei Modus `0600` besitzen.
 ## Linux/Fedora
 
 `tools/build_linux_release.py` und der Workflow `linux-release.yml` erzeugen einen
-portablen Linux-Build inklusive beider Module, zentralem Updater und signierten
-`Linux_x86_64.lpmodule`-Komponenten. Für Linux ist das `tar.gz` die bevorzugte
+portablen Linux-Build inklusive beider Module, zentralem Updater und für den ersten
+Release ausdrücklich unsignierten `Linux_x86_64.lpmodule`-Komponenten. Für Linux ist das `tar.gz` die bevorzugte
 Auslieferung, weil es Unix-Ausführungsrechte zuverlässig bewahrt.

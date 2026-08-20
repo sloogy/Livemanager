@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 
 from lifeplanner_core.process_manager import ModuleProcessManager
@@ -16,6 +17,6 @@ def test_generic_module_data_and_bridge_environment(tmp_path, monkeypatch):
     monkeypatch.setenv("LIFEPLANNER_DATA_DIR", str(tmp_path / "data"))
     manifest = ModuleManifest.load(module / "module.json")
     env = ModuleProcessManager().build_environment(manifest, "default", {})
-    assert env["LIFEPLANNER_MODULE_DATA_DIR"].endswith("modules/demo")
+    assert env["LIFEPLANNER_MODULE_DATA_DIR"].endswith(os.path.join("modules", "demo"))
     assert env["LIFEPLANNER_BRIDGE_DIR"].endswith("bridge")
     assert env["LIFEPLANNER_CENTRAL_UPDATER"] == "1"

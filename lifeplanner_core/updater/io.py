@@ -60,7 +60,11 @@ def _local_path(url_or_path: str) -> Path | None:
     parsed = urlparse(url_or_path)
     if parsed.scheme == "file":
         return Path(unquote(parsed.path))
-    if not parsed.scheme:
+    # A single-letter "scheme" is never a real URL scheme (RFC 3986 schemes
+    # are effectively always >= 2 chars); urlparse() misreads a Windows
+    # drive letter like "C:\..." as scheme "c", which otherwise makes every
+    # local Windows path look like a remote URL.
+    if not parsed.scheme or len(parsed.scheme) == 1:
         return Path(url_or_path).expanduser()
     return None
 

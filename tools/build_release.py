@@ -13,11 +13,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from tools.module_sources import ModuleSourceError, ResolvedModuleSource, resolve_module_sources
+from tools.release_signing import ReleaseSigning, resolve_release_signing
 
 DIST = ROOT / "dist"
 BUILD = ROOT / "build"
 RELEASE = ROOT / "release"
-APP_VERSION = "0.5.0"
+APP_VERSION = "0.5.1"
 
 
 def run(*args: str, cwd: Path = ROOT, env: dict[str, str] | None = None) -> None:
@@ -44,6 +45,7 @@ def _zip_component(
     requires_host: str = "",
     description: str = "",
     platforms: tuple[str, ...] = (),
+    private_key_b64: str,
 ) -> Path:
     from lifeplanner_core.updater.package_builder import build_component_package
 
@@ -57,7 +59,7 @@ def _zip_component(
         requires_host=requires_host,
         description=description,
         platforms=platforms,
-        private_key_b64=os.environ.get("LIFEPLANNER_UPDATE_PRIVATE_KEY_B64", "").strip(),
+        private_key_b64=private_key_b64,
     )
 
 
@@ -65,7 +67,7 @@ def _module_info(module_dir: Path) -> dict:
     return json.loads((module_dir / "module.json").read_text(encoding="utf-8"))
 
 
-def _build_update_assets(shell: Path) -> None:
+def _build_update_assets(shell: Path, *, signing: ReleaseSigning) -> None:
     update_dir = RELEASE / "update-assets"
     update_dir.mkdir(parents=True, exist_ok=True)
     platform_key = "windows-x86_64"
@@ -139,6 +141,7 @@ def _build_update_assets(shell: Path) -> None:
             requires_host=requires_host,
             description=description,
             platforms=(platform_key,),
+            private_key_b64=signing.private_key_b64,
         )
         manifest_components[component_id] = {
             "id": component_id,
@@ -167,13 +170,14 @@ def _build_update_assets(shell: Path) -> None:
     manifest_bytes = (json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode("utf-8")
     manifest_path.write_bytes(manifest_bytes)
 
-    private_key = os.environ.get("LIFEPLANNER_UPDATE_PRIVATE_KEY_B64", "").strip()
-    if private_key:
+    if signing.private_key_b64:
         from lifeplanner_core.updater.signing import sign_manifest
 
-        (update_dir / "lifeplanner-latest.json.sig").write_bytes(sign_manifest(manifest_bytes, private_key))
+        (update_dir / "lifeplanner-latest.json.sig").write_bytes(
+            sign_manifest(manifest_bytes, signing.private_key_b64)
+        )
     else:
-        print("WARNUNG: Kein LIFEPLANNER_UPDATE_PRIVATE_KEY_B64; Manifest bleibt unsigniert.")
+        print("WARNUNG: --allow-unsigned aktiv; Pakete und Update-Manifest bleiben unsigniert.")
     shutil.rmtree(core_payload, ignore_errors=True)
 
 
@@ -232,13 +236,14 @@ def _write_installer_sources(installer_source: Path) -> None:
     )
 
 
-def _materialize_module_public_key(source: ResolvedModuleSource) -> None:
+def _materialize_module_public_key(source: ResolvedModuleSource, *, signing: ReleaseSigning) -> None:
+    if signing.unsigned:
+        print(f"WARNUNG: {source.spec.name}: kein Public-Key im ausdrücklichen --allow-unsigned-Modus.")
+        return
     helper = source.path / "tools" / "materialize_update_public_key.py"
     if helper.is_file():
-        public_key = os.environ.get("LIFEPLANNER_UPDATE_PUBLIC_KEY_B64", "").strip()
         child_env = dict(os.environ)
-        if public_key:
-            child_env.setdefault("UPDATE_SIGNING_PUBLIC_KEY_B64", public_key)
+        child_env.setdefault("UPDATE_SIGNING_PUBLIC_KEY_B64", signing.public_key_b64)
         run(sys.executable, str(helper), cwd=source.path, env=child_env)
 
 
@@ -253,10 +258,16 @@ def _write_source_provenance(sources: dict[str, ResolvedModuleSource]) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
-def build(*, budgetmanager_source: Path | None = None, fpm_source: Path | None = None) -> None:
+def build(
+    *,
+    budgetmanager_source: Path | None = None,
+    fpm_source: Path | None = None,
+    allow_unsigned: bool = False,
+) -> None:
     if not sys.platform.startswith("win"):
         raise SystemExit("Der Windows-Release muss auf Windows oder GitHub Actions windows-latest gebaut werden.")
 
+    signing = resolve_release_signing(allow_unsigned=allow_unsigned)
     explicit = {
         key: value
         for key, value in {
@@ -281,8 +292,8 @@ def build(*, budgetmanager_source: Path | None = None, fpm_source: Path | None =
 
     budgetmanager = sources["budgetmanager"]
     fpm = sources["fpm"]
-    _materialize_module_public_key(budgetmanager)
-    _materialize_module_public_key(fpm)
+    _materialize_module_public_key(budgetmanager, signing=signing)
+    _materialize_module_public_key(fpm, signing=signing)
 
     run(sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", budgetmanager.spec.build_spec, cwd=budgetmanager.path)
     run(sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", fpm.spec.build_spec, cwd=fpm.path)
@@ -323,7 +334,7 @@ def build(*, budgetmanager_source: Path | None = None, fpm_source: Path | None =
     shutil.copytree(shell, portable)
     (portable / "portable.flag").write_text("portable\n", encoding="ascii")
     shutil.make_archive(str(RELEASE / f"LifePlanner_{APP_VERSION}_Windows_Portable"), "zip", RELEASE, portable.name)
-    _build_update_assets(shell)
+    _build_update_assets(shell, signing=signing)
     _write_source_provenance(sources)
     print(f"Portable ZIP: {RELEASE / f'LifePlanner_{APP_VERSION}_Windows_Portable.zip'}")
     print(f"Installer-Dateien: {installer_source}")
@@ -335,8 +346,14 @@ if __name__ == "__main__":
     )
     parser.add_argument("--budgetmanager-source", type=Path)
     parser.add_argument("--fpm-source", type=Path)
+    parser.add_argument(
+        "--allow-unsigned",
+        action="store_true",
+        help="Baut den bewussten ersten Release ohne Paket- und Manifest-Signaturen.",
+    )
     args = parser.parse_args()
     build(
         budgetmanager_source=args.budgetmanager_source,
         fpm_source=args.fpm_source,
+        allow_unsigned=args.allow_unsigned,
     )
