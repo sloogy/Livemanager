@@ -1,4 +1,4 @@
-name: Windows multi-repository release
+name: Release
 
 permissions:
   contents: write
@@ -109,3 +109,90 @@ jobs:
             lifeplanner/release/LifePlanner_0.5.2_Windows_Setup.exe
             lifeplanner/release/module-source-provenance.json
             lifeplanner/release/update-assets/*
+
+  build-linux:
+    runs-on: ubuntu-latest
+    env:
+      LIFEPLANNER_BUDGETMANAGER_SOURCE: ${{ github.workspace }}/module-sources/budgetmanager
+      LIFEPLANNER_FPM_SOURCE: ${{ github.workspace }}/module-sources/fpm
+      QT_QPA_PLATFORM: offscreen
+    steps:
+      - name: Checkout LifePlanner Core
+        uses: actions/checkout@v4
+        with:
+          path: lifeplanner
+
+      - name: Checkout BudgetManager repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.BUDGETMANAGER_REPOSITORY || 'sloogy/Budgetmanager' }}
+          ref: ${{ vars.BUDGETMANAGER_REF || 'v2.2.62' }}
+          token: ${{ secrets.LIFEPLANNER_MODULES_TOKEN || github.token }}
+          path: module-sources/budgetmanager
+
+      - name: Checkout FPM repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.FPM_REPOSITORY || 'sloogy/FPM' }}
+          ref: ${{ vars.FPM_REF || 'v1.0.0' }}
+          token: ${{ secrets.LIFEPLANNER_MODULES_TOKEN || github.token }}
+          path: module-sources/fpm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: |
+            lifeplanner/requirements-dev.txt
+            module-sources/budgetmanager/requirements*.txt
+            module-sources/fpm/requirements*.txt
+
+      - name: Install Qt runtime libraries
+        run: sudo apt-get update && sudo apt-get install -y libegl1 libgl1 libxkbcommon-x11-0 libxcb-cursor0 libdbus-1-3 libfontconfig1
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -r lifeplanner/requirements-dev.txt
+          test ! -f module-sources/budgetmanager/requirements.txt || python -m pip install -r module-sources/budgetmanager/requirements.txt
+          test ! -f module-sources/fpm/requirements.txt || python -m pip install -r module-sources/fpm/requirements.txt
+
+      - name: Validate Core and module repositories
+        working-directory: lifeplanner
+        run: python tools/validate_release.py --with-modules
+
+      - name: Build explicit unsigned first-release portable and updater assets
+        working-directory: lifeplanner
+        env:
+          LIFEPLANNER_RELEASE_BASE_URL: https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}
+        run: >-
+          python tools/build_linux_release.py
+          --allow-unsigned
+          --budgetmanager-source "${{ env.LIFEPLANNER_BUDGETMANAGER_SOURCE }}"
+          --fpm-source "${{ env.LIFEPLANNER_FPM_SOURCE }}"
+
+      - name: Verify Linux artifacts
+        working-directory: lifeplanner
+        run: |
+          test -f release-linux/LifePlanner_0.5.2_Linux_x86_64_Portable.tar.gz
+          test -f release-linux/LifePlanner_0.5.2_Linux_x86_64_Portable.zip
+          test ! -f release-linux/update-assets/lifeplanner-latest-linux.json.sig
+          test "$(find release-linux/update-assets -maxdepth 1 -name '*.lpmodule' -type f | wc -l)" -ge 2
+          test -f release-linux/module-source-provenance-linux.json
+
+      - name: Publish GitHub release assets
+        if: startsWith(github.ref, 'refs/tags/')
+        working-directory: lifeplanner
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "${{ github.ref_name }}" >/dev/null 2>&1 || gh release create "${{ github.ref_name }}" --title "LifePlanner ${{ github.ref_name }}" --generate-notes
+          gh release upload "${{ github.ref_name }}" release-linux/LifePlanner_0.5.2_Linux_x86_64_Portable.tar.gz release-linux/LifePlanner_0.5.2_Linux_x86_64_Portable.zip release-linux/module-source-provenance-linux.json release-linux/update-assets/* --clobber
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LifePlanner-Linux
+          path: |
+            lifeplanner/release-linux/LifePlanner_0.5.2_Linux_x86_64_Portable.tar.gz
+            lifeplanner/release-linux/LifePlanner_0.5.2_Linux_x86_64_Portable.zip
+            lifeplanner/release-linux/module-source-provenance-linux.json
+            lifeplanner/release-linux/update-assets/*

@@ -15,7 +15,7 @@ def test_windows_lock_matches_separate_module_builds():
 
 def test_windows_release_pipeline_stages_all_three_apps_from_separate_repos():
     build = (ROOT / "tools/build_release.py").read_text(encoding="utf-8")
-    workflow = (ROOT / ".github/workflows/windows-release.yml").read_text(encoding="utf-8")
+    workflow = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
     installer = (ROOT / "installer/LifePlanner.iss").read_text(encoding="utf-8")
 
     assert "LifePlanner.spec" in build

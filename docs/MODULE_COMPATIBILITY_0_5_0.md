@@ -25,7 +25,7 @@ Unter Linux muss die Datei Modus `0600` besitzen.
 
 ## Linux/Fedora
 
-`tools/build_linux_release.py` und der Workflow `linux-release.yml` erzeugen einen
+`tools/build_linux_release.py` und der Workflow `release.yml` erzeugen einen
 portablen Linux-Build inklusive beider Module, zentralem Updater und für den ersten
 Release ausdrücklich unsignierten `Linux_x86_64.lpmodule`-Komponenten. Für Linux ist das `tar.gz` die bevorzugte
 Auslieferung, weil es Unix-Ausführungsrechte zuverlässig bewahrt.

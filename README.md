@@ -174,7 +174,7 @@ python tools/validate_release.py --with-modules
 
 ### Fedora/Linux-Release
 
-Der Workflow `.github/workflows/linux-release.yml` baut ein portables `tar.gz`/ZIP mit
+Der gemeinsame Workflow `.github/workflows/release.yml` baut ein portables `tar.gz`/ZIP mit
 LifePlanner, BudgetManager und FPM sowie ausdrücklich unsignierte `linux-x86_64`-Komponenten
 für den ersten Release. Lokale Linux-Modulpakete können nach manueller Vertrauensbestätigung
 in der Modulverwaltung als `.lpmodule` installiert werden.
