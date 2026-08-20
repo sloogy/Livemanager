@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.2 – FPM 1.0.0
+
+- Kompatibilitätsbasis auf FPM 1.0.0 angehoben. Dieses Release behebt im FPM-Repository die Ursache dafür, dass das veröffentlichte Linux-`.lpmodule` die Programmdatei nur als `0644` speicherte.
+- Mindestversion für FPM im GitHub-Katalog entsprechend auf 1.0.0 gesetzt.
+- BudgetManager bleibt auf 2.2.62.
+
 ## 0.5.1 – Windows-Release, Modulstart und Modulkompatibilität
 
 - Modulstart unter Linux repariert: `secure_extract_zip()` hat jede Datei mit Standardrechten geschrieben und das Execute-Bit aus dem Paket verworfen. Ein installiertes Modul scheiterte deshalb beim Start mit `[Errno 13] Keine Berechtigung`. Betroffen waren Modulinstallation und Update-Staging gleichermaßen.

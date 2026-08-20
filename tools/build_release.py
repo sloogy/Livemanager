@@ -18,7 +18,7 @@ from tools.release_signing import ReleaseSigning, resolve_release_signing
 DIST = ROOT / "dist"
 BUILD = ROOT / "build"
 RELEASE = ROOT / "release"
-APP_VERSION = "0.5.1"
+APP_VERSION = "0.5.2"
 
 
 def run(*args: str, cwd: Path = ROOT, env: dict[str, str] | None = None) -> None:

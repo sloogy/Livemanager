@@ -3,7 +3,7 @@
 Freigegebene Kombination:
 
 - BudgetManager 2.2.62
-- FPM 0.3.05
+- FPM 1.0.0
 
 Beide Module besitzen `module.json`, profilbezogene Datenpfade und die gemeinsame JSONL-Bridge. Die LifePlanner-Releaseworkflows bauen daraus Windows-/Linux-`.lpmodule`-Assets. Beim ersten Release sind diese über den ausdrücklichen Schalter `--allow-unsigned` nicht signiert und müssen lokal manuell bestätigt werden. Beim Start durch LifePlanner ist der interne Modul-Updater deaktiviert.
 

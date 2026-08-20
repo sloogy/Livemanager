@@ -308,4 +308,4 @@ def test_release_below_minimum_version_is_not_offered() -> None:
 def test_trusted_repositories_pin_the_supported_module_baseline() -> None:
     minimums = {item.module_id: item.minimum_version for item in TRUSTED_MODULE_REPOSITORIES}
     assert minimums["budgetmanager"] == "2.2.62"
-    assert minimums["fpm"] == "0.3.05"
+    assert minimums["fpm"] == "1.0.0"

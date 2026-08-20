@@ -1,4 +1,4 @@
-# LifePlanner 0.5.1 – Multi-Repository-Plattform mit GitHub-Modulinstaller
+# LifePlanner 0.5.2 – Multi-Repository-Plattform mit GitHub-Modulinstaller
 
 LifePlanner ist der modulare Desktop-Host. **BudgetManager und FPM bleiben vollständig eigenständige Git-Repositories** mit eigener Versionshistorie, eigenen Issues, Tests, Releases und Standalone-Builds.
 
@@ -106,7 +106,7 @@ Abweichende Namen werden als Repository-Variablen gesetzt:
 BUDGETMANAGER_REPOSITORY = sloogy/Budgetmanager
 FPM_REPOSITORY           = sloogy/FPM
 BUDGETMANAGER_REF        = v2.2.62
-FPM_REF                  = v0.3.05
+FPM_REF                  = v1.0.0
 ```
 
 Für den zentralen Build aus privaten Modulrepositories wird ein Fine-grained PAT als Secret benötigt:
@@ -126,13 +126,13 @@ LIFEPLANNER_UPDATE_PUBLIC_KEY_B64
 
 ## Windows-Release
 
-Ein Tag wie `lifeplanner-v0.5.1` baut aus den drei getrennten Checkouts:
+Ein Tag wie `lifeplanner-v0.5.2` baut aus den drei getrennten Checkouts:
 
-- `LifePlanner_0.5.1_Windows_Portable.zip`
-- `LifePlanner_Core_0.5.1_Windows_x86_64.zip`
+- `LifePlanner_0.5.2_Windows_Portable.zip`
+- `LifePlanner_Core_0.5.2_Windows_x86_64.zip`
 - `budgetmanager_2.2.62_Windows_x86_64.lpmodule`
-- `fpm_0.3.05_Windows_x86_64.lpmodule`
-- `LifePlanner_0.5.1_Windows_Setup.exe`
+- `fpm_1.0.0_Windows_x86_64.lpmodule`
+- `LifePlanner_0.5.2_Windows_Setup.exe`
 - `lifeplanner-latest.json`
 - `module-source-provenance.json`
 

@@ -37,7 +37,7 @@ TRUSTED_MODULE_REPOSITORIES = (
         name="FPM - Fountain Pen Manager",
         repository=FPM_REPOSITORY,
         description="Füller, Tinten, Federn, Papier, Rotation und Sammlungswissen.",
-        minimum_version="0.3.05",
+        minimum_version="1.0.0",
     ),
 )
 

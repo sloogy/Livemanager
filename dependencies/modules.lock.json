@@ -1,6 +1,6 @@
 {
   "schema": "lifeplanner.module-sources.v1",
-  "host_version": "0.5.1",
+  "host_version": "0.5.2",
   "modules": [
     {
       "id": "budgetmanager",
@@ -19,10 +19,10 @@
     {
       "id": "fpm",
       "name": "FPM - Fountain Pen Manager",
-      "version": "0.3.05",
+      "version": "1.0.0",
       "default_repository": "sloogy/FPM",
       "repository_variable": "FPM_REPOSITORY",
-      "default_ref": "v0.3.05",
+      "default_ref": "v1.0.0",
       "ref_variable": "FPM_REF",
       "source_environment": "LIFEPLANNER_FPM_SOURCE",
       "default_sibling": "../FPM",

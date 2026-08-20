@@ -32,7 +32,7 @@ def test_lock_has_two_independent_sources():
     assert specs["budgetmanager"].default_repository == "sloogy/Budgetmanager"
     assert specs["fpm"].default_repository == "sloogy/FPM"
     assert specs["budgetmanager"].version == "2.2.62"
-    assert specs["fpm"].version == "0.3.05"
+    assert specs["fpm"].version == "1.0.0"
 
 
 def test_source_validation_checks_id_and_version(tmp_path):
