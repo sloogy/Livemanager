@@ -13,6 +13,8 @@ from . import APP_VERSION
 from .event_bus import FileEventBus, LifePlannerEvent
 from .manifest import ModuleManifest
 from .paths import bridge_dir, logs_dir, module_data_dir, profile_dir
+from .settings import SettingsStore
+from .theme import THEME_ENV_FILE, THEME_ENV_NAME, ThemeCatalog, publish_theme
 from .updater.io import ensure_executable
 
 
@@ -33,15 +35,26 @@ class RunningModule:
 
 
 class ModuleProcessManager:
-    def __init__(self):
+    def __init__(
+        self,
+        settings: SettingsStore | None = None,
+        theme_catalog: ThemeCatalog | None = None,
+    ):
         self._running: dict[str, RunningModule] = {}
+        self._settings = settings
+        self._theme_catalog = theme_catalog
+        # Der Host kennt die Systempalette, dieser Modul hier nicht; er setzt
+        # das Flag, damit "system" auch im Modul hell oder dunkel bedeutet.
+        self.prefers_dark = False
 
     def build_command(self, manifest: ModuleManifest) -> list[str]:
         exe_rel = manifest.executable_relative()
-        if getattr(sys, "frozen", False) and exe_rel:
-            executable = (manifest.module_dir / exe_rel).resolve()
-            if not executable.is_file():
-                raise ModuleLaunchError(f"Modulprogramm fehlt: {executable}")
+        executable = (manifest.module_dir / exe_rel).resolve() if exe_rel else None
+        # Ein installiertes Modulpaket bringt nur die gebaute Programmdatei mit,
+        # kein source_entry. Ob der Host selbst eingefroren ist, sagt darüber
+        # nichts aus: aus der Quelle gestarteter Host plus Binärmodul ist der
+        # Normalfall im Portable-/Source-Betrieb.
+        if executable is not None and executable.is_file():
             if os.name != "nt" and not os.access(executable, os.X_OK):
                 # An older installation may predate the execute-bit fix.
                 try:
@@ -51,8 +64,14 @@ class ModuleProcessManager:
                         f"Modulprogramm ist nicht ausführbar: {executable} ({exc})"
                     ) from exc
             return [str(executable)]
+        if getattr(sys, "frozen", False) and executable is not None:
+            raise ModuleLaunchError(f"Modulprogramm fehlt: {executable}")
         source = (manifest.module_dir / manifest.source_entry).resolve()
         if not source.is_file():
+            if executable is not None:
+                raise ModuleLaunchError(
+                    f"Moduleinstieg fehlt: weder {executable} noch {source}"
+                )
             raise ModuleLaunchError(f"Moduleinstieg fehlt: {source}")
         return [sys.executable, str(source)]
 
@@ -77,7 +96,25 @@ class ModuleProcessManager:
         env.setdefault("LIFEPLANNER_BRIDGE_DIR", context["bridge_dir"])
         env.setdefault("LIFEPLANNER_HOST_VERSION", APP_VERSION)
         env.setdefault("LIFEPLANNER_CENTRAL_UPDATER", "1")
+        self._apply_theme_environment(env, manifest.module_id, profile_id)
         return env
+
+    def _apply_theme_environment(
+        self, env: dict[str, str], module_id: str, profile_id: str
+    ) -> None:
+        """Reicht das zentral gewählte Designprofil an den Modulprozess weiter."""
+        if self._settings is None or self._theme_catalog is None:
+            return
+        wanted = self._settings.theme_for(module_id)
+        profile = self._theme_catalog.resolve(wanted, dark_hint=self.prefers_dark)
+        try:
+            path = publish_theme(profile_id, module_id, profile)
+        except OSError:
+            # Ein nicht schreibbarer Profilordner darf den Modulstart nicht
+            # verhindern; das Modul bleibt dann bei seinem eigenen Design.
+            return
+        env[THEME_ENV_NAME] = profile.name
+        env[THEME_ENV_FILE] = str(path)
 
     def start(self, manifest: ModuleManifest, profile_id: str) -> RunningModule:
         current = self._running.get(manifest.module_id)

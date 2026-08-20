@@ -1,14 +1,14 @@
 {
   "schema": "lifeplanner.module-sources.v1",
-  "host_version": "0.5.3",
+  "host_version": "0.5.4",
   "modules": [
     {
       "id": "budgetmanager",
       "name": "BudgetManager",
-      "version": "2.2.62",
+      "version": "2.2.63",
       "default_repository": "sloogy/Budgetmanager",
       "repository_variable": "BUDGETMANAGER_REPOSITORY",
-      "default_ref": "v2.2.62",
+      "default_ref": "v2.2.63",
       "ref_variable": "BUDGETMANAGER_REF",
       "source_environment": "LIFEPLANNER_BUDGETMANAGER_SOURCE",
       "default_sibling": "../Budgetmanager",

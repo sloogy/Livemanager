@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.5.4 – Zentrale Darstellung und Modulstart aus der Quelle
+
+- **Modulstart repariert.** `build_command()` nutzte die in `module.json` deklarierte Programmdatei nur, wenn der Host selbst eingefroren lief. Aus der Quelle gestartet fiel er auf `source_entry` zurück und meldete `Moduleinstieg fehlt: .../main.py` — eine Datei, die ein installiertes Binärmodul gar nicht mitbringt. Betroffen waren alle Module gleichermaßen. Die Programmdatei wird jetzt verwendet, sobald sie vorhanden ist; `source_entry` bleibt der Weg für Entwicklungsquellen.
+- Fehlt beides, nennt die Meldung beide geprüften Pfade statt nur den Quelleinstieg.
+- **Neuer Bereich Darstellung.** 26 Designprofile, Vorschau vor dem Übernehmen und ein Häkchen, das Host und alle Module auf dasselbe Profil setzt. Ohne Häkchen lässt sich je Modul ein eigenes Profil wählen.
+- Die Profile sind wertgleich mit denen des BudgetManagers, damit „überall dasselbe Theme" dieselben Farben bedeutet und nicht nur denselben Namen.
+- **Ein Austauschformat statt zwei.** Der FreizeitManager hatte `lifeplanner.theme.v1` im Bridge-Ordner bereits festgelegt; der Host schreibt jetzt genau dieses Format und der FreizeitManager übernimmt das zentrale Theme ohne jede Änderung.
+- `shared_theme.json` wird bewusst nur bei gesetztem Häkchen geschrieben — ein ungefragt veröffentlichter Eintrag würde die abweichende Wahl einzelner Module überstimmen. Für abweichende Profile bekommt jeder Modulprozess `LIFEPLANNER_THEME` und `LIFEPLANNER_THEME_FILE`.
+- BudgetManager übernimmt das zentrale Profil beim Start im Host. Seine lokal gespeicherte Wahl bleibt unangetastet und gilt weiterhin im Standalone-Betrieb.
+- Profile mit ungültigem Modus, ungültiger Schriftgröße oder defekter Farbe werden übersprungen und auf der Seite Darstellung als Fehler benannt, statt die Optik stillschweigend zu ersetzen.
+- Kompatibilitätsbasis auf BudgetManager 2.2.63 angehoben.
+- Dokumentation: `docs/THEMING.md`.
+
 ## 0.5.3 – Kontaktmanager als drittes Modul
 
 - **FreizeitManager** (Repository `sloogy/Kontaktmanager`) als drittes Modul aufgenommen: Kontaktrotation, Beziehungsfrische und Freizeitplanung. Aufgenommen in Lockdatei, GitHub-Katalog und Releaseworkflow.

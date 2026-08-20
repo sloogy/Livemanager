@@ -36,14 +36,14 @@ def test_lock_has_independent_sources_per_module():
     assert specs["budgetmanager"].default_repository == "sloogy/Budgetmanager"
     assert specs["fpm"].default_repository == "sloogy/FPM"
     assert specs["freizeitmanager"].default_repository == "sloogy/Kontaktmanager"
-    assert specs["budgetmanager"].version == "2.2.62"
+    assert specs["budgetmanager"].version == "2.2.63"
     assert specs["fpm"].version == "1.0.0"
     assert specs["freizeitmanager"].version == "0.1.1"
 
 
 def test_source_validation_checks_id_and_version(tmp_path):
     spec = {item.module_id: item for item in load_lock()}["budgetmanager"]
-    source = _make_source(tmp_path, module_id="budgetmanager", version="2.2.62", spec_name="BudgetManager.spec")
+    source = _make_source(tmp_path, module_id="budgetmanager", version="2.2.63", spec_name="BudgetManager.spec")
     resolved = validate_module_source(spec, source)
     assert resolved.path == source.resolve()
 

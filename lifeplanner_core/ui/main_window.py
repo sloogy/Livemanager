@@ -31,6 +31,8 @@ from ..repositories import BUDGETMANAGER_REPOSITORY, CORE_REPOSITORY, FPM_REPOSI
 from ..plugin_loader import PluginLoadResult
 from ..process_manager import ModuleLaunchError, ModuleProcessManager
 from ..settings import SettingsStore
+from ..theme import ThemeCatalog, build_stylesheet, publish_shared_theme, publish_theme
+from .appearance_page import AppearancePage
 from .module_manager_page import ModuleManagerPage
 from .update_page import UpdatePage
 
@@ -93,14 +95,15 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.settings = settings
         self.profile_id = settings.active_profile
-        self.process_manager = ModuleProcessManager()
+        self.theme_catalog = ThemeCatalog()
+        self.process_manager = ModuleProcessManager(settings, self.theme_catalog)
         self.load_result = load_result
         self.cards: dict[str, ModuleCard] = {}
         self.setWindowTitle("LifePlanner")
         self.resize(1120, 720)
         self.setMinimumSize(900, 600)
         self._build_ui(load_result)
-        self._apply_style()
+        self.apply_theme()
         self.timer = QTimer(self)
         self.timer.timeout.connect(self._refresh_status)
         self.timer.start(1000)
@@ -114,7 +117,7 @@ class MainWindow(QMainWindow):
         outer.setContentsMargins(0, 0, 0, 0)
         self.nav = QListWidget()
         self.nav.setFixedWidth(220)
-        for title in ("Übersicht", "Module", "Integration", "Updates", "System"):
+        for title in ("Übersicht", "Module", "Integration", "Darstellung", "Updates", "System"):
             QListWidgetItem(title, self.nav)
         self.nav.currentRowChanged.connect(self._change_page)
         outer.addWidget(self.nav)
@@ -122,11 +125,13 @@ class MainWindow(QMainWindow):
         self.overview_page = self._overview_page(load_result)
         self.module_manager_page = ModuleManagerPage(self, load_result)
         self.integration_page = self._integration_page()
+        self.appearance_page = AppearancePage(self, load_result, self.settings, self.theme_catalog)
         self.update_page = UpdatePage(self, load_result, self.settings)
         self.system_page = self._system_page(load_result)
         self.stack.addWidget(self.overview_page)
         self.stack.addWidget(self.module_manager_page)
         self.stack.addWidget(self.integration_page)
+        self.stack.addWidget(self.appearance_page)
         self.stack.addWidget(self.update_page)
         self.stack.addWidget(self.system_page)
         outer.addWidget(self.stack, 1)
@@ -234,11 +239,14 @@ class MainWindow(QMainWindow):
     def _change_page(self, row: int) -> None:
         if row >= 0:
             self.stack.setCurrentIndex(row)
-            if row == 1:
+            current = self.stack.currentWidget()
+            if current is self.module_manager_page:
                 self.module_manager_page.refresh_modules()
+            elif current is self.appearance_page:
+                self.appearance_page._load_from_settings()
 
     def show_updates(self) -> None:
-        self.nav.setCurrentRow(3)
+        self.nav.setCurrentRow(self.stack.indexOf(self.update_page))
 
     def start_module(self, manifest: ModuleManifest) -> None:
         try:
@@ -286,18 +294,28 @@ class MainWindow(QMainWindow):
         self.process_manager.stop_all(profile_id=self.profile_id)
         super().closeEvent(event)
 
-    def _apply_style(self) -> None:
-        self.setStyleSheet(
-            """
-            QMainWindow, QWidget { background: palette(window); color: palette(window-text); }
-            QListWidget { border: 0; padding: 18px 8px; font-size: 15px; }
-            QListWidget::item { padding: 12px; border-radius: 8px; margin: 2px 0; }
-            QListWidget::item:selected { background: palette(highlight); color: palette(highlighted-text); }
-            QFrame#moduleCard { border: 1px solid palette(mid); border-radius: 12px; padding: 14px; }
-            QLabel#moduleStatus { font-weight: 600; }
-            QLabel#notice { border: 1px solid palette(mid); border-radius: 8px; padding: 12px; }
-            QLabel#errorNotice { border: 1px solid palette(mid); border-radius: 8px; padding: 12px; }
-            QPushButton { min-height: 36px; padding: 0 14px; border-radius: 8px; }
-            QPushButton#primaryButton { font-weight: 700; }
-            """
-        )
+    def prefers_dark(self) -> bool:
+        """Ob die Systempalette dunkel ist - Grundlage für das Profil "system"."""
+        palette = self.palette()
+        window = palette.color(palette.ColorRole.Window)
+        return window.lightness() < 128
+
+    def apply_theme(self) -> None:
+        """Wendet das gewählte Profil auf den Host an und stellt es Modulen bereit."""
+        profile = self.theme_catalog.resolve(self.settings.theme, dark_hint=self.prefers_dark())
+        self.process_manager.prefers_dark = self.prefers_dark()
+        self.setStyleSheet(build_stylesheet(profile))
+        font = self.font()
+        font.setPointSize(profile.font_size)
+        self.setFont(font)
+        try:
+            for module_id in list(self.cards):
+                publish_theme(self.profile_id, module_id, self.theme_catalog.resolve(
+                    self.settings.theme_for(module_id), dark_hint=self.prefers_dark()
+                ))
+            if self.settings.theme_applies_to_all:
+                # Nur bei "für alle" veröffentlichen - sonst würde der Eintrag
+                # die abweichende Wahl einzelner Module überstimmen.
+                publish_shared_theme(self.profile_id, profile)
+        except OSError as exc:
+            logger.warning("Designprofil nicht schreibbar: %s", exc)

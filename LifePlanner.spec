@@ -6,6 +6,9 @@ datas = []
 public_key = root / "lifeplanner_core" / "resources" / "lifeplanner_update_public_key.b64"
 if public_key.is_file():
     datas.append((str(public_key), "resources"))
+themes = root / "lifeplanner_core" / "themes"
+if themes.is_dir():
+    datas.append((str(themes / "*.json"), "themes"))
 
 a = Analysis(
     [str(root / "main.py")],

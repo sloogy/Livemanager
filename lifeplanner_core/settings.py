@@ -14,6 +14,10 @@ _DEFAULTS: dict[str, Any] = {
     "schema": 1,
     "active_profile": "default",
     "theme": "system",
+    # Ein Häkchen im Darstellungsbereich hält Host und alle Module auf
+    # demselben Profil; ausgeschaltet zählt der Eintrag in module_themes.
+    "theme_apply_to_all": True,
+    "module_themes": {},
     "language": "de",
     "ollama": {"enabled": False, "endpoint": "http://127.0.0.1:11434", "model": ""},
     "updates": {"manifest_url": CORE_LATEST_MANIFEST_URL, "auto_check": False, "channel": "stable"},
@@ -71,3 +75,33 @@ class SettingsStore:
     @property
     def active_profile(self) -> str:
         return str(self.get("active_profile", "default"))
+
+    @property
+    def theme(self) -> str:
+        return str(self.get("theme", "system") or "system")
+
+    @property
+    def theme_applies_to_all(self) -> bool:
+        return bool(self.get("theme_apply_to_all", True))
+
+    def theme_for(self, module_id: str) -> str:
+        """Profilname für ein Modul unter Berücksichtigung des Häkchens."""
+        if self.theme_applies_to_all:
+            return self.theme
+        overrides = self.get("module_themes", {})
+        if isinstance(overrides, dict):
+            value = str(overrides.get(module_id, "") or "").strip()
+            if value:
+                return value
+        return self.theme
+
+    def set_module_theme(self, module_id: str, name: str) -> None:
+        overrides = self.get("module_themes", {})
+        if not isinstance(overrides, dict):
+            overrides = {}
+        value = str(name or "").strip()
+        if value:
+            overrides[module_id] = value
+        else:
+            overrides.pop(module_id, None)
+        self.set("module_themes", overrides)
