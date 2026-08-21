@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from ..i18n import SPRACHEN, t
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
@@ -22,7 +23,10 @@ from ..plugin_loader import PluginLoadResult
 from ..settings import SettingsStore
 from ..theme import SYSTEM_THEME, ThemeCatalog, ThemeProfile, build_stylesheet
 
-SYSTEM_LABEL = "Systemvorgabe (hell/dunkel automatisch)"
+def _system_label() -> str:
+    """Erst beim Aufbau der Seite auflösen - beim Import steht die Sprache
+    noch nicht fest."""
+    return t("darstellung.systemvorgabe_label")
 
 
 class ThemePreview(QFrame):
@@ -34,7 +38,7 @@ class ThemePreview(QFrame):
         self.setFrameShape(QFrame.Shape.StyledPanel)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(16, 16, 16, 16)
-        self.title = QLabel("Vorschau")
+        self.title = QLabel(t("darstellung.vorschau"))
         font = QFont()
         font.setPointSize(13)
         font.setBold(True)
@@ -44,20 +48,20 @@ class ThemePreview(QFrame):
         card.setObjectName("moduleCard")
         card_layout = QVBoxLayout(card)
         card_layout.addWidget(QLabel("BudgetManager"))
-        status = QLabel("Läuft")
+        status = QLabel(t("gemeinsam.laeuft"))
         status.setObjectName("moduleStatus")
         card_layout.addWidget(status)
         bar = QProgressBar()
         bar.setValue(64)
         card_layout.addWidget(bar)
         buttons = QHBoxLayout()
-        primary = QPushButton("Öffnen")
+        primary = QPushButton(t("gemeinsam.oeffnen"))
         primary.setObjectName("primaryButton")
         buttons.addWidget(primary)
-        buttons.addWidget(QPushButton("Datenordner"))
+        buttons.addWidget(QPushButton(t("gemeinsam.datenordner")))
         card_layout.addLayout(buttons)
         layout.addWidget(card)
-        note = QLabel("So sehen Kacheln, Schaltflächen und Hinweise mit diesem Profil aus.")
+        note = QLabel(t("darstellung.vorschau_hinweis"))
         note.setObjectName("notice")
         note.setWordWrap(True)
         layout.addWidget(note)
@@ -91,17 +95,13 @@ class AppearancePage(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(28, 24, 28, 24)
         layout.addLayout(
-            self.host._header(
-                "Darstellung",
-                "Ein Designprofil für LifePlanner und alle Module. Die Profile sind mit dem "
-                "BudgetManager identisch, damit überall dieselben Farben gelten.",
-            )
+            self.host._header(t("darstellung.titel"), t("darstellung.einleitung"))
         )
 
         chooser = QHBoxLayout()
         self.profile_list = QListWidget()
         self.profile_list.setMinimumWidth(280)
-        QListWidgetItem(SYSTEM_LABEL, self.profile_list).setData(
+        QListWidgetItem(_system_label(), self.profile_list).setData(
             Qt.ItemDataRole.UserRole, SYSTEM_THEME
         )
         for name in self.catalog.names():
@@ -113,35 +113,49 @@ class AppearancePage(QWidget):
         chooser.addWidget(self.preview, 1)
         layout.addLayout(chooser, 1)
 
+        # Sprache der Host-Oberflaeche. Sie steht hier, weil Darstellung und
+        # Sprache dasselbe betreffen: wie das Programm sich zeigt.
+        sprach_gruppe = QGroupBox(t("darstellung.sprache"))
+        sprach_form = QFormLayout(sprach_gruppe)
+        self.language_box = QComboBox()
+        for kuerzel, bezeichnung in SPRACHEN.items():
+            self.language_box.addItem(bezeichnung, kuerzel)
+        sprach_form.addRow(t("darstellung.sprache"), self.language_box)
+        hinweis = QLabel(t("darstellung.sprache_hinweis"))
+        hinweis.setWordWrap(True)
+        hinweis.setObjectName("notice")
+        sprach_form.addRow("", hinweis)
+        layout.addWidget(sprach_gruppe)
+
         # Was "Systemvorgabe" bedeutet, gehört sichtbar dazu: Zu einem dunklen
         # Design gibt es nicht automatisch ein passendes helles, das der Host
         # erfinden könnte.
-        self.system_group = QGroupBox("Systemvorgabe bedeutet")
+        self.system_group = QGroupBox(t("darstellung.systemvorgabe"))
         system_form = QFormLayout(self.system_group)
         self.system_light = QComboBox()
         self.system_dark = QComboBox()
         for box in (self.system_light, self.system_dark):
             for name in self.catalog.names():
                 box.addItem(name, name)
-        system_form.addRow("Bei hellem System", self.system_light)
-        system_form.addRow("Bei dunklem System", self.system_dark)
+        system_form.addRow(t("darstellung.system_hell"), self.system_light)
+        system_form.addRow(t("darstellung.system_dunkel"), self.system_dark)
         layout.addWidget(self.system_group)
 
-        self.apply_all = QCheckBox("Dasselbe Design für alle Module verwenden")
+        self.apply_all = QCheckBox(t("darstellung.alle_module"))
         self.apply_all.toggled.connect(self._toggle_module_overrides)
         layout.addWidget(self.apply_all)
 
-        self.module_group = QGroupBox("Design je Modul")
+        self.module_group = QGroupBox(t("darstellung.je_modul"))
         form = QFormLayout(self.module_group)
         for manifest in self.load_result.modules:
             box = QComboBox()
-            box.addItem("Wie LifePlanner", "")
+            box.addItem(t("darstellung.wie_host"), "")
             for name in self.catalog.names():
                 box.addItem(name, name)
             self.module_boxes[manifest.module_id] = box
             form.addRow(manifest.name, box)
         if not self.module_boxes:
-            form.addRow(QLabel("Kein Modul installiert."))
+            form.addRow(QLabel(t("darstellung.kein_modul")))
         layout.addWidget(self.module_group)
 
         self.hint = QLabel()
@@ -150,10 +164,10 @@ class AppearancePage(QWidget):
         layout.addWidget(self.hint)
 
         row = QHBoxLayout()
-        apply_button = QPushButton("Übernehmen")
+        apply_button = QPushButton(t("darstellung.uebernehmen"))
         apply_button.setObjectName("primaryButton")
         apply_button.clicked.connect(self.apply_selection)
-        reset = QPushButton("Verwerfen")
+        reset = QPushButton(t("darstellung.verwerfen"))
         reset.clicked.connect(self._load_from_settings)
         row.addWidget(apply_button)
         row.addWidget(reset)
@@ -178,6 +192,8 @@ class AppearancePage(QWidget):
 
     def _load_from_settings(self) -> None:
         self._select(self.settings.theme)
+        index = self.language_box.findData(self.settings.language)
+        self.language_box.setCurrentIndex(max(0, index))
         light, dark = self.settings.system_theme_pair
         for box, wanted in ((self.system_light, light), (self.system_dark, dark)):
             box.setCurrentIndex(max(0, box.findData(wanted)))
@@ -228,12 +244,15 @@ class AppearancePage(QWidget):
             )
         else:
             self.hint.setText(
-                "Module erhalten das Profil beim Start. LifePlanner selbst wechselt sofort."
+                t("darstellung.uebernahme_hinweis")
             )
 
     # ---------------------------------------------------------------- Aktion
 
     def apply_selection(self) -> None:
+        # Zuerst die Sprache: Meldungen, die dieser Aufruf noch ausloest,
+        # sollen schon in der neuen Sprache erscheinen.
+        self.settings.set_language(str(self.language_box.currentData() or "de"))
         self.settings.set("theme", self.selected_theme())
         self.settings.set_system_theme_pair(*self._selected_system_pair())
         self.settings.set("theme_apply_to_all", self.apply_all.isChecked())

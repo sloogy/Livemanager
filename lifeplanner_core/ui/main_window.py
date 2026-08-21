@@ -27,6 +27,7 @@ from ..backup_service import BackupError, create_profile_backup
 from ..bridge import summarize_fpm_outbox
 from ..diagnostics import write_diagnostics
 from ..manifest import ModuleManifest
+from ..i18n import t
 from ..paths import bridge_dir, data_root, module_data_dir
 from ..repositories import BUDGETMANAGER_REPOSITORY, CORE_REPOSITORY, FPM_REPOSITORY
 from ..plugin_loader import PluginLoadResult
@@ -59,14 +60,14 @@ class ModuleCard(QFrame):
         desc = QLabel(manifest.description)
         desc.setWordWrap(True)
         layout.addWidget(desc)
-        self.status = QLabel("Bereit")
+        self.status = QLabel(t("gemeinsam.bereit"))
         self.status.setObjectName("moduleStatus")
         layout.addWidget(self.status)
         buttons = QHBoxLayout()
-        self.launch_button = QPushButton("Öffnen")
+        self.launch_button = QPushButton(t("gemeinsam.oeffnen"))
         self.launch_button.setObjectName("primaryButton")
         self.launch_button.clicked.connect(self._toggle)
-        folder_button = QPushButton("Datenordner")
+        folder_button = QPushButton(t("gemeinsam.datenordner"))
         folder_button.clicked.connect(self._open_data)
         buttons.addWidget(self.launch_button)
         buttons.addWidget(folder_button)
@@ -85,11 +86,11 @@ class ModuleCard(QFrame):
     def refresh(self) -> None:
         running = self.host.process_manager.get(self.manifest.module_id)
         if running and running.is_running:
-            self.status.setText("Läuft")
-            self.launch_button.setText("Beenden")
+            self.status.setText(t("gemeinsam.laeuft"))
+            self.launch_button.setText(t("gemeinsam.beenden"))
         else:
-            self.status.setText("Bereit")
-            self.launch_button.setText("Öffnen")
+            self.status.setText(t("gemeinsam.bereit"))
+            self.launch_button.setText(t("gemeinsam.oeffnen"))
 
 
 class MainWindow(QMainWindow):
@@ -158,7 +159,7 @@ class MainWindow(QMainWindow):
         page = QWidget()
         layout = QVBoxLayout(page)
         layout.setContentsMargins(28, 24, 28, 24)
-        layout.addLayout(self._header("Dein LifePlanner", f"Profil: {self.profile_id} · Wähle ein Modul und arbeite fokussiert weiter."))
+        layout.addLayout(self._header(t("haupt.start_titel"), t("haupt.start_einleitung", profil=self.profile_id)))
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         content = QWidget()
@@ -169,7 +170,7 @@ class MainWindow(QMainWindow):
             self.cards[manifest.module_id] = card
             grid.addWidget(card, index // 2, index % 2)
         if not load_result.modules:
-            grid.addWidget(QLabel("Keine gültigen Module gefunden."), 0, 0)
+            grid.addWidget(QLabel(t("haupt.keine_module")), 0, 0)
         grid.setRowStretch((len(load_result.modules) + 1) // 2, 1)
         scroll.setWidget(content)
         layout.addWidget(scroll, 1)
@@ -179,22 +180,21 @@ class MainWindow(QMainWindow):
         page = QWidget()
         layout = QVBoxLayout(page)
         layout.setContentsMargins(28, 24, 28, 24)
-        layout.addLayout(self._header("Integration", "Module tauschen ausschließlich prüfbare Dateien und Events aus - niemals direkte SQL-Zugriffe."))
+        layout.addLayout(self._header(t("haupt.integration_titel"), t("haupt.integration_einleitung")))
         self.bridge_summary = QLabel()
         self.bridge_summary.setWordWrap(True)
         layout.addWidget(self.bridge_summary)
         row = QHBoxLayout()
-        refresh = QPushButton("Status aktualisieren")
+        refresh = QPushButton(t("haupt.status_aktualisieren"))
         refresh.clicked.connect(self._refresh_bridge)
-        folder = QPushButton("Bridge-Ordner öffnen")
+        folder = QPushButton(t("haupt.bridge_oeffnen"))
         folder.clicked.connect(lambda: self.open_folder(bridge_dir(self.profile_id)))
         row.addWidget(refresh)
         row.addWidget(folder)
         row.addStretch(1)
         layout.addLayout(row)
         note = QLabel(
-            "FPM schreibt ausschließlich prüfbare Vorschläge. BudgetManager übernimmt sie erst nach Freigabe in der Import-Inbox. "
-            "Der zentrale Updater aktualisiert Core und Module getrennt, ohne ihre Datenbanken miteinander zu koppeln."
+            t("haupt.bridge_hinweis")
         )
         note.setWordWrap(True)
         note.setObjectName("notice")
@@ -207,7 +207,7 @@ class MainWindow(QMainWindow):
         page = QWidget()
         layout = QVBoxLayout(page)
         layout.setContentsMargins(28, 24, 28, 24)
-        layout.addLayout(self._header("System", "Zentrale Pfade, Sicherung und Diagnose des LifePlanner-Core."))
+        layout.addLayout(self._header(t("haupt.system_titel"), t("haupt.system_einleitung")))
         path_label = QLabel(
             f"Lokaler LifePlanner-Datenstamm:\n{data_root()}\n\n"
             f"GitHub Core: {CORE_REPOSITORY}\n"
@@ -224,12 +224,12 @@ class MainWindow(QMainWindow):
             error.setObjectName("errorNotice")
             layout.addWidget(error)
         row = QHBoxLayout()
-        backup = QPushButton("Profil sichern")
+        backup = QPushButton(t("haupt.profil_sichern"))
         backup.setObjectName("primaryButton")
         backup.clicked.connect(self._create_backup)
-        diagnostics = QPushButton("Diagnose schreiben")
+        diagnostics = QPushButton(t("haupt.diagnose_schreiben"))
         diagnostics.clicked.connect(self._write_diagnostics)
-        open_data = QPushButton("Datenordner öffnen")
+        open_data = QPushButton(t("haupt.datenordner_oeffnen"))
         open_data.clicked.connect(lambda: self.open_folder(data_root()))
         row.addWidget(backup)
         row.addWidget(diagnostics)
@@ -256,7 +256,7 @@ class MainWindow(QMainWindow):
             self.process_manager.start(manifest, self.profile_id)
             self.cards[manifest.module_id].refresh()
         except ModuleLaunchError as exc:
-            QMessageBox.critical(self, "Modulstart fehlgeschlagen", str(exc))
+            QMessageBox.critical(self, t("haupt.modulstart_fehler"), str(exc))
 
     def stop_module(self, manifest: ModuleManifest) -> None:
         self.process_manager.stop(manifest.module_id, profile_id=self.profile_id)
@@ -300,13 +300,13 @@ class MainWindow(QMainWindow):
         try:
             path = create_profile_backup(self.profile_id)
         except BackupError as exc:
-            QMessageBox.critical(self, "Sicherung fehlgeschlagen", str(exc))
+            QMessageBox.critical(self, t("haupt.sicherung_fehler"), str(exc))
             return
-        QMessageBox.information(self, "Sicherung erstellt", f"Das Profil wurde geprüft und gesichert:\n{path}")
+        QMessageBox.information(self, t("haupt.sicherung_erstellt"), f"Das Profil wurde geprüft und gesichert:\n{path}")
 
     def _write_diagnostics(self) -> None:
         path = write_diagnostics()
-        QMessageBox.information(self, "Diagnose erstellt", f"Diagnosedatei:\n{path}")
+        QMessageBox.information(self, t("haupt.diagnose_erstellt"), f"Diagnosedatei:\n{path}")
 
     @staticmethod
     def open_folder(path: Path) -> None:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from ..i18n import t
 from PySide6.QtCore import QCoreApplication, QThread, QTimer, Qt, Signal
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
@@ -84,15 +85,14 @@ class UpdatePage(QWidget):
     def _build_ui(self) -> None:
         root = QVBoxLayout(self)
         root.setContentsMargins(28, 24, 28, 24)
-        heading = QLabel("Zentrale Updates")
+        heading = QLabel(t("updates.titel"))
         font = QFont()
         font.setPointSize(20)
         font.setBold(True)
         heading.setFont(font)
         root.addWidget(heading)
         subtitle = QLabel(
-            "LifePlanner prüft Core, installierte Module und neue Module aus dem signierten Online-Katalog gemeinsam. "
-            "Jede Komponente wird geprüft, zwischengespeichert und erst nach Rollback-Backup installiert."
+            t("updates.einleitung")
         )
         subtitle.setWordWrap(True)
         root.addWidget(subtitle)
@@ -100,27 +100,27 @@ class UpdatePage(QWidget):
         source = QFrame()
         source.setObjectName("moduleCard")
         source_layout = QVBoxLayout(source)
-        source_layout.addWidget(QLabel("Zentrales Update-Manifest"))
+        source_layout.addWidget(QLabel(t("updates.manifest")))
         row = QHBoxLayout()
         configured = self._updates_settings().get("manifest_url", "")
         env_url = os.environ.get("LIFEPLANNER_UPDATE_MANIFEST_URL", "").strip()
         self.url_edit = QLineEdit(str(env_url or configured))
         self.url_edit.setPlaceholderText("https://…/lifeplanner-latest.json")
         self.url_edit.setClearButtonEnabled(True)
-        self.check_button = QPushButton("Alle Updates prüfen")
+        self.check_button = QPushButton(t("updates.alle_pruefen"))
         self.check_button.setObjectName("primaryButton")
         self.check_button.clicked.connect(self.check_updates)
         row.addWidget(self.url_edit, 1)
         row.addWidget(self.check_button)
         source_layout.addLayout(row)
-        self.auto_check = QCheckBox("Beim Start automatisch prüfen")
+        self.auto_check = QCheckBox(t("updates.beim_start"))
         self.auto_check.setChecked(bool(self._updates_settings().get("auto_check", False)))
         self.auto_check.toggled.connect(self._save_update_settings)
         self.url_edit.editingFinished.connect(self._save_update_settings)
         source_layout.addWidget(self.auto_check)
         root.addWidget(source)
 
-        self.status_label = QLabel("Noch nicht geprüft.")
+        self.status_label = QLabel(t("updates.nicht_geprueft"))
         self.status_label.setWordWrap(True)
         self.status_label.setObjectName("notice")
         root.addWidget(self.status_label)
@@ -140,11 +140,11 @@ class UpdatePage(QWidget):
         root.addWidget(self.table, 1)
 
         buttons = QHBoxLayout()
-        select_all = QPushButton("Alle verfügbaren auswählen")
+        select_all = QPushButton(t("updates.alle_auswaehlen"))
         select_all.clicked.connect(lambda: self._set_all_checks(True))
-        select_none = QPushButton("Auswahl aufheben")
+        select_none = QPushButton(t("updates.auswahl_aufheben"))
         select_none.clicked.connect(lambda: self._set_all_checks(False))
-        self.install_button = QPushButton("Auswahl installieren")
+        self.install_button = QPushButton(t("updates.auswahl_installieren"))
         self.install_button.setObjectName("primaryButton")
         self.install_button.setEnabled(False)
         self.install_button.clicked.connect(self.install_selected)
@@ -155,8 +155,7 @@ class UpdatePage(QWidget):
         root.addLayout(buttons)
 
         warning = QLabel(
-            "Während der Installation werden offene Module kontrolliert beendet. Nicht gespeicherte Eingaben in einem Modul "
-            "müssen daher vorher gespeichert werden. Profildaten und Programmdateien erhalten getrennte Rollback-Sicherungen."
+            t("updates.installationshinweis")
         )
         warning.setWordWrap(True)
         warning.setObjectName("notice")
@@ -173,7 +172,7 @@ class UpdatePage(QWidget):
         url = self.url_edit.text().strip()
         if not url:
             if not silent:
-                QMessageBox.warning(self, "Update-Quelle fehlt", "Bitte die URL des zentralen Update-Manifests eintragen.")
+                QMessageBox.warning(self, t("updates.quelle_fehlt"), t("updates.quelle_fehlt_hinweis"))
             return
         self._set_busy(True, "Signatur und Versionsstände werden geprüft …")
         self.check_worker = _CheckWorker(self.service, url)
@@ -197,7 +196,7 @@ class UpdatePage(QWidget):
                 parts.append(f"{installs} neue Modulinstallation(en)")
             self.status_label.setText(" und ".join(parts) + " verfügbar. Komponenten sind standardmäßig ausgewählt.")
         else:
-            self.status_label.setText("LifePlanner-Core und alle bekannten Module sind aktuell.")
+            self.status_label.setText(t("updates.alles_aktuell"))
         self.install_button.setEnabled(count > 0)
         self._set_busy(False)
 
@@ -208,7 +207,7 @@ class UpdatePage(QWidget):
         self.install_button.setEnabled(False)
         self._set_busy(False)
         if not silent:
-            QMessageBox.critical(self, "Update-Prüfung fehlgeschlagen", message)
+            QMessageBox.critical(self, t("updates.pruefung_fehler"), message)
 
     def _worker_finished(self) -> None:
         worker = self.sender()
@@ -256,7 +255,7 @@ class UpdatePage(QWidget):
             return
         selected = self._selected_ids()
         if not selected:
-            QMessageBox.information(self, "Keine Auswahl", "Mindestens eine verfügbare Komponente auswählen.")
+            QMessageBox.information(self, t("updates.keine_auswahl"), t("updates.keine_auswahl_hinweis"))
             return
         names = [
             status.name
@@ -265,7 +264,7 @@ class UpdatePage(QWidget):
         ]
         answer = QMessageBox.question(
             self,
-            "Installation vorbereiten",
+            t("updates.installation_vorbereiten"),
             "Folgende Komponenten werden installiert oder aktualisiert:\n\n• "
             + "\n• ".join(names)
             + "\n\nOffene Module werden nach dem Download beendet. Fortfahren?",
@@ -287,22 +286,22 @@ class UpdatePage(QWidget):
             self.service.launch_helper(plan_path)
         except Exception as exc:
             self._set_busy(False)
-            QMessageBox.critical(self, "Update konnte nicht gestartet werden", str(exc))
+            QMessageBox.critical(self, t("updates.start_fehler"), str(exc))
             return
         self.status_label.setText(
-            "Update vorbereitet. LifePlanner wird jetzt geschlossen; der externe Helfer installiert alle ausgewählten Komponenten und startet neu."
+            t("updates.vorbereitet_hinweis")
         )
         QMessageBox.information(
             self,
-            "Update wird installiert",
-            "Alle ausgewählten Komponenten wurden geprüft. LifePlanner wird jetzt geschlossen und nach dem Update automatisch neu gestartet.",
+            t("updates.wird_installiert"),
+            t("updates.wird_installiert_hinweis"),
         )
         QTimer.singleShot(0, QCoreApplication.quit)
 
     def _stage_failed(self, message: str) -> None:
         self._set_busy(False)
         self.status_label.setText(f"Update-Vorbereitung fehlgeschlagen: {message}")
-        QMessageBox.critical(self, "Update-Vorbereitung fehlgeschlagen", message)
+        QMessageBox.critical(self, t("updates.vorbereitung_fehler"), message)
 
     def _set_busy(self, busy: bool, text: str = "") -> None:
         self.check_button.setEnabled(not busy)

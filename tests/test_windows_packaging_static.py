@@ -67,8 +67,13 @@ def test_module_manager_is_connected_to_shell() -> None:
     main_window = (ROOT / "lifeplanner_core/ui/main_window.py").read_text(encoding="utf-8")
     manager = (ROOT / "lifeplanner_core/ui/module_manager_page.py").read_text(encoding="utf-8")
     assert "ModuleManagerPage" in main_window
-    assert "Modulpaket installieren" in manager
-    assert "Modul deinstallieren" in manager
-    assert "Profildaten" in manager
-    assert "Unsigniertes Modulpaket" in manager
+    # Der Text steht seit der Uebersetzung in den Sprachdateien, nicht mehr
+    # im Quelltext. Geprueft wird darum der Schluessel.
+    assert 't("module.paket_installieren")' in manager
+    assert 't("module.deinstallieren")' in manager
+    assert 't("module.unsigniert")' in manager
+    # Der Sicherheitshinweis und der Satz zu den Profildaten stehen in den
+    # Sprachdateien; dass sie dort vorhanden sind, prueft
+    # tests/test_i18n_vollstaendig.py.
+    assert 't("module.sicherheitshinweis")' in manager
     assert "QMessageBox.StandardButton.Cancel" in manager

@@ -19,6 +19,9 @@ INITIAL_DARK_THEME = "V2 Dunkel – Graphite Cyan"
 _DEFAULTS: dict[str, Any] = {
     "schema": 1,
     "active_profile": "default",
+    # Sprache der Host-Oberflaeche. Die Module bringen ihre eigene mit; der
+    # Host reicht sie nicht durch, weil jedes Programm sie selbst speichert.
+    "language": "de",
     "theme": "system",
     # Welche Profile "system" bedeutet. Für bestehende Konfigurationen bleibt
     # es beim Standardpaar - ein Update soll niemandem die Farben umstellen.
@@ -46,6 +49,11 @@ class SettingsStore:
         self.load()
         if not existed:
             self._apply_initial_theme()
+        # Die gespeicherte Sprache gilt ab dem Start, nicht erst nachdem
+        # jemand die Darstellungsseite geoeffnet hat.
+        from .i18n import setze_sprache
+
+        setze_sprache(self.language)
 
     def _apply_initial_theme(self) -> None:
         """Auslieferungspaar einer neuen Installation einmalig festhalten.
@@ -112,6 +120,21 @@ class SettingsStore:
     def set_system_theme_pair(self, light: str, dark: str) -> None:
         self.set("system_theme_light", str(light or "").strip() or "Standard - Hell")
         self.set("system_theme_dark", str(dark or "").strip() or "Standard - Dunkel")
+
+    @property
+    def language(self) -> str:
+        from .i18n import SPRACHEN, STANDARD
+
+        wert = str(self.get("language", STANDARD) or STANDARD)
+        return wert if wert in SPRACHEN else STANDARD
+
+    def set_language(self, sprache: str) -> None:
+        """Speichert die Sprache und stellt sie sofort um."""
+        from .i18n import SPRACHEN, STANDARD, setze_sprache
+
+        gewaehlt = sprache if sprache in SPRACHEN else STANDARD
+        self.set("language", gewaehlt)
+        setze_sprache(gewaehlt)
 
     @property
     def theme(self) -> str:

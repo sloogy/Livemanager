@@ -28,6 +28,7 @@ from ..installer_catalog import (
 )
 from ..manifest import ModuleManifest
 from ..module_installer import ModuleInstallerError, ModuleInstallerService, ModulePackageInfo
+from ..i18n import t
 from ..paths import data_root, module_data_dir, modules_dir
 from ..plugin_loader import discover_modules
 from ..updater.service import UpdateService
@@ -109,7 +110,7 @@ class ModuleManagerPage(QWidget):
         root = QVBoxLayout(self)
         root.setContentsMargins(28, 24, 28, 24)
 
-        heading = QLabel("Module verwalten")
+        heading = QLabel(t("module.titel"))
         font = QFont()
         font.setPointSize(20)
         font.setBold(True)
@@ -117,9 +118,7 @@ class ModuleManagerPage(QWidget):
         root.addWidget(heading)
 
         subtitle = QLabel(
-            "Installiere signierte oder ausdrücklich vertrauenswürdige unsignierte .lpmodule-Pakete, "
-            "aktualisiere Module über den zentralen Katalog "
-            "oder entferne ausschließlich die Programmdateien. Profildaten bleiben bei einer Deinstallation erhalten."
+            t("module.einleitung")
         )
         subtitle.setWordWrap(True)
         root.addWidget(subtitle)
@@ -127,12 +126,12 @@ class ModuleManagerPage(QWidget):
         actions = QFrame()
         actions.setObjectName("moduleCard")
         action_layout = QHBoxLayout(actions)
-        self.install_local_button = QPushButton("Modulpaket installieren …")
+        self.install_local_button = QPushButton(t("module.paket_installieren"))
         self.install_local_button.setObjectName("primaryButton")
         self.install_local_button.clicked.connect(self.choose_local_package)
-        self.github_button = QPushButton("BudgetManager / FPM von GitHub")
+        self.github_button = QPushButton(t("module.von_github"))
         self.github_button.clicked.connect(self.refresh_github_catalog)
-        folder_button = QPushButton("Modulordner öffnen")
+        folder_button = QPushButton(t("module.ordner_oeffnen"))
         folder_button.clicked.connect(lambda: self.host.open_folder(modules_dir()))
         action_layout.addWidget(self.install_local_button)
         action_layout.addWidget(self.github_button)
@@ -140,12 +139,12 @@ class ModuleManagerPage(QWidget):
         action_layout.addStretch(1)
         root.addWidget(actions)
 
-        self.status_label = QLabel("Bereit.")
+        self.status_label = QLabel(t("module.bereit"))
         self.status_label.setWordWrap(True)
         self.status_label.setObjectName("notice")
         root.addWidget(self.status_label)
 
-        online_title = QLabel("Offizielle GitHub-Module")
+        online_title = QLabel(t("module.offizielle"))
         online_font = QFont()
         online_font.setBold(True)
         online_title.setFont(online_font)
@@ -177,13 +176,13 @@ class ModuleManagerPage(QWidget):
         root.addWidget(self.table, 1)
 
         row = QHBoxLayout()
-        refresh_button = QPushButton("Liste aktualisieren")
+        refresh_button = QPushButton(t("module.liste_aktualisieren"))
         refresh_button.clicked.connect(self.refresh_modules)
-        self.open_program_button = QPushButton("Programmordner")
+        self.open_program_button = QPushButton(t("module.programmordner"))
         self.open_program_button.clicked.connect(self.open_selected_program_folder)
-        self.open_data_button = QPushButton("Datenordner")
+        self.open_data_button = QPushButton(t("gemeinsam.datenordner"))
         self.open_data_button.clicked.connect(self.open_selected_data_folder)
-        self.uninstall_button = QPushButton("Modul deinstallieren")
+        self.uninstall_button = QPushButton(t("module.deinstallieren"))
         self.uninstall_button.clicked.connect(self.uninstall_selected)
         row.addWidget(refresh_button)
         row.addWidget(self.open_program_button)
@@ -193,9 +192,7 @@ class ModuleManagerPage(QWidget):
         root.addLayout(row)
 
         note = QLabel(
-            "Sicherheit: Ein Modul ist ausführbarer Code und läuft derzeit mit den Rechten deines Benutzerkontos; "
-            "eine Betriebssystem-Sandbox ist noch nicht umgesetzt. Die deklarierten LifePlanner-Berechtigungen werden vorab angezeigt. "
-            "Installiere daher auch signierte Pakete nur von einem vertrauenswürdigen Herausgeber. Installation und Entfernung erfolgen mit Backup und Rollback."
+            t("module.sicherheitshinweis")
         )
         note.setWordWrap(True)
         note.setObjectName("notice")
@@ -215,7 +212,7 @@ class ModuleManagerPage(QWidget):
             self.table.setItem(row, 1, QTableWidgetItem(manifest.version))
             self.table.setItem(row, 2, QTableWidgetItem(manifest.module_id))
             running = self.host.process_manager.get(manifest.module_id)
-            self.table.setItem(row, 3, QTableWidgetItem("Läuft" if running and running.is_running else "Installiert"))
+            self.table.setItem(row, 3, QTableWidgetItem(t("gemeinsam.laeuft") if running and running.is_running else "Installiert"))
             data_path = module_data_dir(self.host.profile_id, manifest.module_id)
             self.table.setItem(row, 4, QTableWidgetItem("vorhanden" if data_path.exists() else "noch keine"))
         if self.load_result.errors:
@@ -223,7 +220,7 @@ class ModuleManagerPage(QWidget):
         elif modules:
             self.status_label.setText(f"{len(modules)} Modul(e) installiert.")
         else:
-            self.status_label.setText("Noch keine Module installiert.")
+            self.status_label.setText(t("module.noch_keine"))
         self._update_selection_buttons()
         if self.online_releases:
             self._render_github_catalog(self.online_releases)
@@ -232,7 +229,7 @@ class ModuleManagerPage(QWidget):
         if self.catalog_worker and self.catalog_worker.isRunning():
             return
         self.github_button.setEnabled(False)
-        self.status_label.setText("GitHub-Repositories werden nach stabilen, passenden .lpmodule-Releases abgefragt …")
+        self.status_label.setText(t("module.github_abfrage"))
         self.catalog_worker = _CatalogWorker()
         self.catalog_worker.succeeded.connect(self._catalog_loaded)
         self.catalog_worker.failed.connect(self._catalog_failed)
@@ -245,7 +242,7 @@ class ModuleManagerPage(QWidget):
 
     def _catalog_failed(self, message: str) -> None:
         self.status_label.setText(f"GitHub-Katalog konnte nicht geladen werden: {message}")
-        QMessageBox.warning(self, "GitHub-Katalog", message)
+        QMessageBox.warning(self, t("module.github_katalog"), message)
 
     def _catalog_loaded(self, value: object) -> None:
         releases = tuple(item for item in (value if isinstance(value, tuple) else ()) if isinstance(item, ModuleRelease))
@@ -255,7 +252,7 @@ class ModuleManagerPage(QWidget):
         if available:
             self.status_label.setText(f"{available} offizielles GitHub-Modul ist für dieses Betriebssystem installierbar." if available == 1 else f"{available} offizielle GitHub-Module sind für dieses Betriebssystem installierbar.")
         else:
-            self.status_label.setText("In den offiziellen Repositories wurde derzeit kein passendes .lpmodule für dieses Betriebssystem gefunden.")
+            self.status_label.setText(t("module.kein_passendes_paket"))
 
     def _render_github_catalog(self, releases: tuple[ModuleRelease, ...]) -> None:
         installed = {module.module_id: module.version for module in self.load_result.modules}
@@ -278,7 +275,7 @@ class ModuleManagerPage(QWidget):
 
     def download_github_release(self, release: ModuleRelease) -> None:
         if self.download_worker and self.download_worker.isRunning():
-            QMessageBox.information(self, "Download läuft", "Es wird bereits ein Modul von GitHub geladen.")
+            QMessageBox.information(self, t("module.download_laeuft"), t("module.download_laeuft_hinweis"))
             return
         cache = data_root() / "cache" / "github-modules"
         self._set_busy(True, f"{release.name} {release.version} wird aus {release.repository} geladen …")
@@ -297,7 +294,7 @@ class ModuleManagerPage(QWidget):
 
     def _github_download_failed(self, message: str) -> None:
         self.status_label.setText(f"GitHub-Download fehlgeschlagen: {message}")
-        QMessageBox.critical(self, "GitHub-Download fehlgeschlagen", message)
+        QMessageBox.critical(self, t("module.download_fehler"), message)
 
     def _github_downloaded(self, value: object) -> None:
         if not isinstance(value, Path):
@@ -315,7 +312,7 @@ class ModuleManagerPage(QWidget):
             running = self.host.process_manager.get(module_id)
             status = self.table.item(row, 3)
             if status:
-                status.setText("Läuft" if running and running.is_running else "Installiert")
+                status.setText(t("gemeinsam.laeuft") if running and running.is_running else "Installiert")
 
     def _selected_manifest(self) -> ModuleManifest | None:
         rows = self.table.selectionModel().selectedRows() if self.table.selectionModel() else []
@@ -347,7 +344,7 @@ class ModuleManagerPage(QWidget):
 
     def install_package_path(self, path: Path | str) -> None:
         if self.inspect_worker and self.inspect_worker.isRunning():
-            QMessageBox.information(self, "Paketprüfung läuft", "Es wird bereits ein Modulpaket geprüft.")
+            QMessageBox.information(self, t("module.pruefung_laeuft"), t("module.pruefung_laeuft_hinweis"))
             return
         self.host.nav.setCurrentRow(1)
         self._set_busy(True, "Modulpaket wird sicher entpackt und geprüft …")
@@ -362,7 +359,7 @@ class ModuleManagerPage(QWidget):
 
     def _package_failed(self, message: str) -> None:
         self._set_busy(False, f"Modulpaket abgelehnt: {message}")
-        QMessageBox.critical(self, "Modulpaket abgelehnt", message)
+        QMessageBox.critical(self, t("module.paket_abgelehnt"), message)
 
     def _package_inspected(self, value: object) -> None:
         if not isinstance(value, ModulePackageInfo):
@@ -383,14 +380,14 @@ class ModuleManagerPage(QWidget):
             f"Deklarierte Berechtigungen:\n{permissions}"
         )
         if not info.compatible:
-            QMessageBox.critical(self, "Modul nicht kompatibel", details)
+            QMessageBox.critical(self, t("module.nicht_kompatibel"), details)
             self.status_label.setText(f"{info.name} kann nicht installiert werden: {info.compatibility_reason}")
             return
 
         if not info.signed:
             answer = QMessageBox.warning(
                 self,
-                "Unsigniertes Modulpaket",
+                t("module.unsigniert"),
                 details
                 + "\n\nDie Herkunft dieses Pakets kann nicht kryptografisch bestätigt werden. "
                 "Das Modul ist ausführbarer Code und läuft mit deinen Benutzerrechten. Installiere es nur, wenn du die Datei selbst erstellt "
@@ -409,20 +406,20 @@ class ModuleManagerPage(QWidget):
                 QMessageBox.StandardButton.Yes,
             )
         if answer != QMessageBox.StandardButton.Yes:
-            self.status_label.setText("Modulinstallation abgebrochen.")
+            self.status_label.setText(t("module.installation_abgebrochen"))
             return
 
         if info.is_downgrade:
             downgrade = QMessageBox.warning(
                 self,
-                "Downgrade bestätigen",
+                t("module.downgrade_bestaetigen"),
                 f"Du installierst {info.name} {info.version} über die neuere Version {info.installed_version}. "
                 "Die Profildaten bleiben erhalten, könnten aber für die ältere Version zu neu sein. Fortfahren?",
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
                 QMessageBox.StandardButton.Cancel,
             )
             if downgrade != QMessageBox.StandardButton.Yes:
-                self.status_label.setText("Downgrade abgebrochen.")
+                self.status_label.setText(t("module.downgrade_abgebrochen"))
                 return
         self._install_package(info)
 
@@ -434,15 +431,15 @@ class ModuleManagerPage(QWidget):
             self.update_service.launch_helper(plan_path)
         except Exception as exc:
             self._set_busy(False)
-            QMessageBox.critical(self, "Modulinstallation fehlgeschlagen", str(exc))
+            QMessageBox.critical(self, t("module.installation_fehler"), str(exc))
             return
         self.status_label.setText(
             f"{info.name} wurde geprüft. LifePlanner wird geschlossen, das Modul installiert und anschließend neu gestartet."
         )
         QMessageBox.information(
             self,
-            "Modul wird installiert",
-            "Vor der Installation werden Programm und Profildaten gesichert. Bei einem Fehler wird automatisch zurückgerollt.",
+            t("module.wird_installiert"),
+            t("module.installation_hinweis"),
         )
         QTimer.singleShot(0, QCoreApplication.quit)
 
@@ -453,7 +450,7 @@ class ModuleManagerPage(QWidget):
         data_path = module_data_dir(self.host.profile_id, manifest.module_id)
         answer = QMessageBox.warning(
             self,
-            "Modul deinstallieren",
+            t("module.deinstallieren"),
             f"{manifest.name} {manifest.version} wird aus LifePlanner entfernt.\n\n"
             f"Die Programmdaten unter {data_path} bleiben bewusst erhalten und können bei einer späteren Neuinstallation weiterverwendet werden.\n\n"
             "Fortfahren?",
@@ -467,15 +464,15 @@ class ModuleManagerPage(QWidget):
             plan_path = self.installer.write_uninstall_plan(manifest.module_id, parent_pid=os.getpid())
             self.update_service.launch_helper(plan_path)
         except Exception as exc:
-            QMessageBox.critical(self, "Deinstallation fehlgeschlagen", str(exc))
+            QMessageBox.critical(self, t("module.deinstallation_fehler"), str(exc))
             return
         self.status_label.setText(
             f"{manifest.name} wird nach dem Schließen entfernt. Die Profildaten bleiben erhalten."
         )
         QMessageBox.information(
             self,
-            "Deinstallation vorbereitet",
-            "LifePlanner wird geschlossen, das Modul mit Rollback-Sicherung entfernt und anschließend neu gestartet.",
+            t("module.deinstallation_vorbereitet"),
+            t("module.deinstallation_hinweis"),
         )
         QTimer.singleShot(0, QCoreApplication.quit)
 
