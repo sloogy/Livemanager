@@ -97,7 +97,7 @@ def _build_update_assets(shell: Path, *, signing: ReleaseSigning) -> None:
             shutil.copy2(item, target)
 
     components: list[tuple[str, str, str, str, Path, str, str, str]] = []
-    core_name = f"LifePlanner_Core_{APP_VERSION}_Windows_x86_64.zip"
+    core_name = f"LifePlanner_Core_{APP_VERSION}_Windows_x86_64.lpupdate"
     components.append(
         (
             "lifeplanner.core",
@@ -203,9 +203,6 @@ def _repository_slug(module_id: str, default_repository: str) -> str:
     configured = os.environ.get(variable, "").strip() if variable else ""
     if configured:
         return configured
-    # A fully-qualified repository in modules.lock.json is the canonical default.
-    # This makes installer/update discovery independent of the owner of the
-    # LifePlanner repository while still allowing CI overrides via env vars.
     if "/" in default_repository:
         return default_repository
     if owner:
@@ -267,6 +264,34 @@ def _write_source_provenance(sources: dict[str, ResolvedModuleSource]) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
+def _smoke_test_windows_runtime(shell: Path) -> None:
+    """Prove on the build runner that the frozen Windows runtime can load."""
+    launcher = shell / "LifePlanner.exe"
+    diagnostic_path = shell / ".lifeplanner-runtime-smoke.json"
+    diagnostic_path.unlink(missing_ok=True)
+    completed = subprocess.run(
+        [str(launcher), "--diagnostics-file", str(diagnostic_path)],
+        cwd=shell,
+        capture_output=True,
+        text=True,
+        timeout=45,
+        check=False,
+    )
+    if completed.returncode != 0 or not diagnostic_path.is_file():
+        raise RuntimeError(
+            "Windows-Runtime-Smoke-Test fehlgeschlagen "
+            f"(Exit {completed.returncode}): {completed.stderr.strip() or completed.stdout.strip()}"
+        )
+    try:
+        diagnostic = json.loads(diagnostic_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f"Windows-Diagnose ist kein gueltiges JSON: {diagnostic_path}") from exc
+    finally:
+        diagnostic_path.unlink(missing_ok=True)
+    if diagnostic.get("lifeplanner_version") != APP_VERSION or diagnostic.get("frozen") is not True:
+        raise RuntimeError(f"Windows-Diagnose unerwartet: {diagnostic}")
+
+
 def build(
     *,
     module_sources: dict[str, Path] | None = None,
@@ -297,10 +322,15 @@ def build(
     for resolved in ordered:
         run(sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", resolved.spec.build_spec, cwd=resolved.path)
     run(sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", "LifePlanner.spec", cwd=ROOT)
+    run(sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", "LifePlannerLauncher.spec", cwd=ROOT)
     run(sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", "LifePlannerUpdater.spec", cwd=ROOT)
     run(sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", "LifePlannerInstallerBootstrap.spec", cwd=ROOT)
 
     shell = DIST / "LifePlanner"
+    launcher = DIST / "LifePlanner.exe"
+    if not launcher.is_file():
+        raise RuntimeError(f"Windows-Launcher fehlt nach Build: {launcher}")
+    shutil.copy2(launcher, shell / launcher.name)
     helper = DIST / "LifePlannerUpdater.exe"
     if not helper.is_file():
         raise RuntimeError(f"Update-Helfer fehlt nach Build: {helper}")
@@ -317,11 +347,11 @@ def build(
             raise RuntimeError(f"{resolved.spec.name}: Buildausgabe fehlt: {built_dir}")
         shutil.copytree(built_dir, target / resolved.spec.runtime_directory, dirs_exist_ok=True)
 
+    _smoke_test_windows_runtime(shell)
+
     installer_source = RELEASE / "LifePlanner_Installer_Source"
     portable = RELEASE / "LifePlanner_Portable"
     shutil.copytree(shell, installer_source)
-    # The per-user Windows installation lives in a writable LocalAppData program
-    # directory, so keep all LifePlanner state below that one installation root.
     (installer_source / "portable.flag").write_text("single-root\n", encoding="ascii")
     shutil.rmtree(installer_source / "modules", ignore_errors=True)
     (installer_source / "modules").mkdir(parents=True, exist_ok=True)

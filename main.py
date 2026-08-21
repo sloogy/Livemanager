@@ -14,6 +14,7 @@ from lifeplanner_core.settings import SettingsStore
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="LifePlanner modularer Desktop-Host")
     parser.add_argument("--diagnostics", action="store_true", help="Diagnose als JSON ausgeben")
+    parser.add_argument("--diagnostics-file", type=Path, help="Diagnose als JSON in eine Datei schreiben")
     parser.add_argument("--list-modules", action="store_true", help="Gefundene Module ausgeben")
     parser.add_argument("--install-module", type=Path, help="Ein .lpmodule-Paket öffnen und prüfen")
     parser.add_argument("module_package", nargs="?", type=Path, help=argparse.SUPPRESS)
@@ -22,8 +23,14 @@ def _parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = _parse_args()
-    if args.diagnostics:
-        print(json.dumps(build_diagnostics(), ensure_ascii=False, indent=2))
+    if args.diagnostics or args.diagnostics_file is not None:
+        payload = json.dumps(build_diagnostics(), ensure_ascii=False, indent=2)
+        if args.diagnostics_file is not None:
+            target = args.diagnostics_file.expanduser().resolve()
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(payload + "\n", encoding="utf-8")
+        if args.diagnostics:
+            print(payload)
         return 0
     result = discover_modules()
     if args.list_modules:

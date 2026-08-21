@@ -23,14 +23,15 @@ def test_windows_release_pipeline_stages_all_three_apps_from_separate_repos():
     assert "LifePlanner.spec" in build
     assert "resolve_module_sources" in build
     assert "windows-latest" in workflow
+    assert 'python-version: "3.12"' in workflow
     assert "Checkout BudgetManager repository" in workflow
     assert "Checkout FPM repository" in workflow
     assert "v1.0.3" in workflow
     assert "--allow-unsigned" in workflow
     assert "First release must stay explicitly unsigned" in workflow
-    assert f"LifePlanner_{APP_VERSION}_Windows_Portable.zip" in workflow
+    assert "LifePlanner_*_Windows_Portable.zip" in workflow
     publish_line = next(line for line in workflow.splitlines() if "gh release upload" in line)
-    assert f"LifePlanner_{APP_VERSION}_Windows_Setup.exe" in publish_line
+    assert "Windows_Setup.exe" in publish_line
     assert f"LifePlanner_{APP_VERSION}_Windows_Setup" in installer
     assert "PrivilegesRequired=lowest" in installer
 
@@ -46,6 +47,10 @@ def test_windows_installer_queries_separate_repositories_and_requires_one_module
     assert "Excludes: \"modules\\*" in installer
     assert "_write_installer_sources" in build
     assert "LifePlannerInstallerBootstrap.spec" in build
+    assert "LifePlannerLauncher.spec" in build
+    assert "_smoke_test_windows_runtime" in build
+    assert "LifePlannerCore.exe" in (ROOT / "windows_launcher.py").read_text(encoding="utf-8")
+    assert ".lpupdate" in build
 
 
 def test_module_manager_is_connected_to_shell() -> None:

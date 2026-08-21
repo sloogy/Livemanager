@@ -1,7 +1,9 @@
 # -*- mode: python ; coding: utf-8 -*-
 from pathlib import Path
+import sys
 
 root = Path(SPECPATH)
+core_exe_name = "LifePlannerCore" if sys.platform.startswith("win") else "LifePlanner"
 datas = []
 public_key = root / "lifeplanner_core" / "resources" / "lifeplanner_update_public_key.b64"
 if public_key.is_file():
@@ -28,7 +30,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name="LifePlanner",
+    name=core_exe_name,
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

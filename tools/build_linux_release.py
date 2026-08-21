@@ -92,7 +92,7 @@ def build_update_assets(shell: Path, *, signing: ReleaseSigning) -> None:
 
     entries: list[tuple[str, str, str, str, Path, str, str, str]] = [(
         "lifeplanner.core", "LifePlanner Core", APP_VERSION, "core", core_payload,
-        f"LifePlanner_Core_{APP_VERSION}_{PLATFORM_LABEL}.zip", "", "LifePlanner Plattform-Core",
+        f"LifePlanner_Core_{APP_VERSION}_{PLATFORM_LABEL}.lpupdate", "", "LifePlanner Plattform-Core",
     )]
     for module_path in sorted(path for path in (shell / "modules").iterdir()
                               if path.is_dir() and (path / "module.json").is_file()):
