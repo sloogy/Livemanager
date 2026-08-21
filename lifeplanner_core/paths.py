@@ -64,8 +64,20 @@ def validate_profile_id(profile_id: str) -> str:
 
 
 def profile_dir(profile_id: str) -> Path:
+    """Der Profilordner - Einstellungen, Brückendateien, Moduldaten.
+
+    Er wird auf 0700 gesetzt, sobald er entsteht. Mit dem Standard-umask
+    angelegt wäre er auf typischen Linux-Systemen 0755: Jedes lokale Konto
+    könnte hineinsehen, und in der Brücke stehen Buchungen und Sparziele.
+    Unterordner erben die Rechte nicht, sind aber nur über diesen erreichbar.
+    """
     path = profiles_dir() / validate_profile_id(profile_id)
+    neu = not path.exists()
     path.mkdir(parents=True, exist_ok=True)
+    if neu:
+        from .file_permissions import secure_dir
+
+        secure_dir(path)
     return path
 
 
