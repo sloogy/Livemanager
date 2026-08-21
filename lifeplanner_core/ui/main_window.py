@@ -6,6 +6,7 @@ from pathlib import Path
 from PySide6.QtCore import QTimer, QUrl, Qt
 from PySide6.QtGui import QDesktopServices, QFont
 from PySide6.QtWidgets import (
+    QApplication,
     QFrame,
     QGridLayout,
     QHBoxLayout,
@@ -31,7 +32,8 @@ from ..repositories import BUDGETMANAGER_REPOSITORY, CORE_REPOSITORY, FPM_REPOSI
 from ..plugin_loader import PluginLoadResult
 from ..process_manager import ModuleLaunchError, ModuleProcessManager
 from ..settings import SettingsStore
-from ..theme import ThemeCatalog, build_stylesheet, publish_shared_theme, publish_theme
+from ..theme import (SYSTEM_THEME, ThemeCatalog, build_stylesheet,
+                     publish_shared_theme, publish_theme)
 from .appearance_page import AppearancePage
 from .module_manager_page import ModuleManagerPage
 from .update_page import UpdatePage
@@ -104,6 +106,7 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(900, 600)
         self._build_ui(load_result)
         self.apply_theme()
+        self._watch_system_color_scheme()
         self.timer = QTimer(self)
         self.timer.timeout.connect(self._refresh_status)
         self.timer.start(1000)
@@ -294,15 +297,49 @@ class MainWindow(QMainWindow):
         self.process_manager.stop_all(profile_id=self.profile_id)
         super().closeEvent(event)
 
+    def _watch_system_color_scheme(self) -> None:
+        """Auf den Hell/Dunkel-Wechsel des Betriebssystems reagieren.
+
+        Ohne diese Verbindung griffe das Profil "system" erst beim nächsten
+        Start - und genau dann hilft es niemandem. Der Host reicht das Profil
+        anschließend an alle laufenden Module weiter.
+        """
+        app = QApplication.instance()
+        if app is None:
+            return
+        signal = getattr(app.styleHints(), "colorSchemeChanged", None)
+        if signal is None:  # Qt älter als 6.5
+            return
+        signal.connect(self._system_color_scheme_changed)
+
+    def _system_color_scheme_changed(self, _scheme) -> None:
+        if str(self.settings.theme or "").strip().lower() != SYSTEM_THEME:
+            return
+        self.apply_theme()
+
     def prefers_dark(self) -> bool:
-        """Ob die Systempalette dunkel ist - Grundlage für das Profil "system"."""
-        palette = self.palette()
-        window = palette.color(palette.ColorRole.Window)
+        """Ob das System dunkel eingestellt ist - Grundlage für das Profil "system".
+
+        Qt sagt es seit 6.5 direkt. Die Palette bleibt als Rückfall: sie ist ein
+        Umweg über die Fensterfarbe und liegt daneben, sobald ein Stylesheet
+        oder ein Plattformthema dazwischenfunkt.
+        """
+        hints = QApplication.instance().styleHints() if QApplication.instance() else None
+        scheme = getattr(hints, "colorScheme", None)
+        if scheme is not None:
+            value = scheme()
+            if value == Qt.ColorScheme.Dark:
+                return True
+            if value == Qt.ColorScheme.Light:
+                return False
+        window = self.palette().color(self.palette().ColorRole.Window)
         return window.lightness() < 128
 
     def apply_theme(self) -> None:
         """Wendet das gewählte Profil auf den Host an und stellt es Modulen bereit."""
-        profile = self.theme_catalog.resolve(self.settings.theme, dark_hint=self.prefers_dark())
+        profile = self.theme_catalog.resolve(
+            self.settings.theme, dark_hint=self.prefers_dark(),
+            system_pair=self.settings.system_theme_pair)
         self.process_manager.prefers_dark = self.prefers_dark()
         self.setStyleSheet(build_stylesheet(profile))
         font = self.font()
@@ -311,7 +348,8 @@ class MainWindow(QMainWindow):
         try:
             for module_id in list(self.cards):
                 publish_theme(self.profile_id, module_id, self.theme_catalog.resolve(
-                    self.settings.theme_for(module_id), dark_hint=self.prefers_dark()
+                    self.settings.theme_for(module_id), dark_hint=self.prefers_dark(),
+                    system_pair=self.settings.system_theme_pair
                 ))
             if self.settings.theme_applies_to_all:
                 # Nur bei "für alle" veröffentlichen - sonst würde der Eintrag

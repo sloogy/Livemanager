@@ -107,10 +107,25 @@ class AppearancePage(QWidget):
         for name in self.catalog.names():
             QListWidgetItem(name, self.profile_list).setData(Qt.ItemDataRole.UserRole, name)
         self.profile_list.currentItemChanged.connect(self._preview_current)
+        self.profile_list.currentItemChanged.connect(self._toggle_system_group)
         chooser.addWidget(self.profile_list, 1)
         self.preview = ThemePreview()
         chooser.addWidget(self.preview, 1)
         layout.addLayout(chooser, 1)
+
+        # Was "Systemvorgabe" bedeutet, gehört sichtbar dazu: Zu einem dunklen
+        # Design gibt es nicht automatisch ein passendes helles, das der Host
+        # erfinden könnte.
+        self.system_group = QGroupBox("Systemvorgabe bedeutet")
+        system_form = QFormLayout(self.system_group)
+        self.system_light = QComboBox()
+        self.system_dark = QComboBox()
+        for box in (self.system_light, self.system_dark):
+            for name in self.catalog.names():
+                box.addItem(name, name)
+        system_form.addRow("Bei hellem System", self.system_light)
+        system_form.addRow("Bei dunklem System", self.system_dark)
+        layout.addWidget(self.system_group)
 
         self.apply_all = QCheckBox("Dasselbe Design für alle Module verwenden")
         self.apply_all.toggled.connect(self._toggle_module_overrides)
@@ -163,6 +178,9 @@ class AppearancePage(QWidget):
 
     def _load_from_settings(self) -> None:
         self._select(self.settings.theme)
+        light, dark = self.settings.system_theme_pair
+        for box, wanted in ((self.system_light, light), (self.system_dark, dark)):
+            box.setCurrentIndex(max(0, box.findData(wanted)))
         self.apply_all.setChecked(self.settings.theme_applies_to_all)
         overrides = self.settings.get("module_themes", {}) or {}
         for module_id, box in self.module_boxes.items():
@@ -170,6 +188,7 @@ class AppearancePage(QWidget):
             index = box.findData(wanted)
             box.setCurrentIndex(index if index >= 0 else 0)
         self._toggle_module_overrides(self.apply_all.isChecked())
+        self._toggle_system_group()
         self._update_hint()
 
     def selected_theme(self) -> str:
@@ -180,8 +199,17 @@ class AppearancePage(QWidget):
 
     def _preview_current(self) -> None:
         self.preview.show_profile(
-            self.catalog.resolve(self.selected_theme(), dark_hint=self.host.prefers_dark())
+            self.catalog.resolve(self.selected_theme(),
+                                 dark_hint=self.host.prefers_dark(),
+                                 system_pair=self._selected_system_pair())
         )
+
+    def _selected_system_pair(self) -> tuple[str, str]:
+        return (str(self.system_light.currentData() or ""),
+                str(self.system_dark.currentData() or ""))
+
+    def _toggle_system_group(self) -> None:
+        self.system_group.setEnabled(self.selected_theme() == SYSTEM_THEME)
 
     def _toggle_module_overrides(self, apply_all: bool) -> None:
         self.module_group.setEnabled(not apply_all and bool(self.module_boxes))
@@ -207,6 +235,7 @@ class AppearancePage(QWidget):
 
     def apply_selection(self) -> None:
         self.settings.set("theme", self.selected_theme())
+        self.settings.set_system_theme_pair(*self._selected_system_pair())
         self.settings.set("theme_apply_to_all", self.apply_all.isChecked())
         if not self.apply_all.isChecked():
             for module_id, box in self.module_boxes.items():

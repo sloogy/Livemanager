@@ -10,10 +10,22 @@ from typing import Any
 from .paths import config_dir
 from .repositories import CORE_LATEST_MANIFEST_URL
 
+# Auslieferungszustand einer neuen Installation. Bewusst getrennt von den
+# Rückfallprofilen: ein frisch installierter LifePlanner soll nicht nach
+# Rückfall aussehen.
+INITIAL_LIGHT_THEME = "V2 Hell – Neon Cyan"
+INITIAL_DARK_THEME = "V2 Dunkel – Graphite Cyan"
+
 _DEFAULTS: dict[str, Any] = {
     "schema": 1,
     "active_profile": "default",
     "theme": "system",
+    # Welche Profile "system" bedeutet. Für bestehende Konfigurationen bleibt
+    # es beim Standardpaar - ein Update soll niemandem die Farben umstellen.
+    # Eine neu angelegte settings.json bekommt stattdessen das Auslieferungspaar
+    # (siehe _apply_initial_theme).
+    "system_theme_light": "Standard - Hell",
+    "system_theme_dark": "Standard - Dunkel",
     # Ein Häkchen im Darstellungsbereich hält Host und alle Module auf
     # demselben Profil; ausgeschaltet zählt der Eintrag in module_themes.
     "theme_apply_to_all": True,
@@ -30,7 +42,21 @@ class SettingsStore:
         self.path = path or (config_dir() / "settings.json")
         self._lock = threading.RLock()
         self._data = deepcopy(_DEFAULTS)
+        existed = self.path.is_file()
         self.load()
+        if not existed:
+            self._apply_initial_theme()
+
+    def _apply_initial_theme(self) -> None:
+        """Auslieferungspaar einer neuen Installation einmalig festhalten.
+
+        Nur wenn es noch keine settings.json gab: Wer LifePlanner schon nutzt,
+        behält sein Erscheinungsbild, auch wenn er nie eines gewählt hat.
+        """
+        with self._lock:
+            self._data["system_theme_light"] = INITIAL_LIGHT_THEME
+            self._data["system_theme_dark"] = INITIAL_DARK_THEME
+        self.save()
 
     def load(self) -> dict[str, Any]:
         with self._lock:
@@ -75,6 +101,17 @@ class SettingsStore:
     @property
     def active_profile(self) -> str:
         return str(self.get("active_profile", "default"))
+
+    @property
+    def system_theme_pair(self) -> tuple[str, str]:
+        """Die beiden Profile, die "system" bei hell und dunkel bedeutet."""
+        light = str(self.get("system_theme_light", "") or "").strip()
+        dark = str(self.get("system_theme_dark", "") or "").strip()
+        return light or "Standard - Hell", dark or "Standard - Dunkel"
+
+    def set_system_theme_pair(self, light: str, dark: str) -> None:
+        self.set("system_theme_light", str(light or "").strip() or "Standard - Hell")
+        self.set("system_theme_dark", str(dark or "").strip() or "Standard - Dunkel")
 
     @property
     def theme(self) -> str:

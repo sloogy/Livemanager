@@ -182,11 +182,22 @@ class ThemeCatalog:
                 return name
         return self.names()[0]
 
-    def resolve(self, name: str, dark_hint: bool = False) -> ThemeProfile:
-        """Profil zum Namen; ``system`` und Unbekanntes fallen auf Standard."""
+    def resolve(self, name: str, dark_hint: bool = False,
+                system_pair: tuple[str, str] | None = None) -> ThemeProfile:
+        """Profil zum Namen; ``system`` folgt dem Paar, Unbekanntes dem Standard.
+
+        ``system_pair`` sagt, was "system" bedeutet - ohne Angabe bleibt es beim
+        Standardpaar. So kann eine neue Installation mit einem anderen
+        Auslieferungsdesign starten, ohne dass bestehende ihres verlieren.
+        """
         profile = self.get(name)
         if profile is not None:
             return profile
+        if str(name or "").strip().lower() == SYSTEM_THEME and system_pair:
+            wanted = system_pair[1] if dark_hint else system_pair[0]
+            chosen = self.get(wanted)
+            if chosen is not None:
+                return chosen
         return self._profiles[self.default_name(dark_hint)]
 
 
