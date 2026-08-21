@@ -18,6 +18,40 @@ from .theme import THEME_ENV_FILE, THEME_ENV_NAME, ThemeCatalog, publish_theme
 from .updater.io import ensure_executable
 
 
+# Ab dieser Groesse wird das Log eines Moduls beiseitegelegt, und so viele
+# alte Staende bleiben liegen. Ein RotatingFileHandler hilft hier nicht: Der
+# Modulprozess schreibt selbst in den Dateideskriptor, den wir ihm geben, und
+# weiss nichts von Python-Logging. Also wird beim Start gerollt.
+MAX_MODULLOG_BYTES = 1_500_000
+MODULLOG_STAENDE = 5
+
+
+def _rotiere_modullog(pfad: Path) -> None:
+    """Legt ein zu grosses Modul-Log beiseite, bevor weiter angehaengt wird.
+
+    Ohne das wuchs die Datei bei jedem Start weiter - ein Modul, das im
+    Sekundentakt etwas ausgibt, fuellt sonst unbemerkt die Platte.
+    """
+    try:
+        if not pfad.is_file() or pfad.stat().st_size < MAX_MODULLOG_BYTES:
+            return
+    except OSError:
+        return
+    try:
+        # Von hinten nach vorne durchschieben: .4 -> .5, .3 -> .4, ...
+        aeltester = pfad.with_name(f"{pfad.name}.{MODULLOG_STAENDE}")
+        if aeltester.exists():
+            aeltester.unlink()
+        for nummer in range(MODULLOG_STAENDE - 1, 0, -1):
+            quelle = pfad.with_name(f"{pfad.name}.{nummer}")
+            if quelle.exists():
+                quelle.replace(pfad.with_name(f"{pfad.name}.{nummer + 1}"))
+        pfad.replace(pfad.with_name(f"{pfad.name}.1"))
+    except OSError:
+        # Ein nicht rotierbares Log darf den Modulstart nicht verhindern.
+        pass
+
+
 class ModuleLaunchError(RuntimeError):
     pass
 
@@ -123,6 +157,7 @@ class ModuleProcessManager:
         command = self.build_command(manifest)
         env = self.build_environment(manifest, profile_id)
         log_path = logs_dir(profile_id) / f"{manifest.module_id}.log"
+        _rotiere_modullog(log_path)
         log_handle = log_path.open("a", encoding="utf-8", buffering=1)
         kwargs: dict = {
             "cwd": str(manifest.module_dir),
