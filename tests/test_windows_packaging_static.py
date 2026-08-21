@@ -26,7 +26,14 @@ def test_windows_release_pipeline_stages_all_three_apps_from_separate_repos():
     assert 'python-version: "3.12"' in workflow
     assert "Checkout BudgetManager repository" in workflow
     assert "Checkout FPM repository" in workflow
-    assert "v1.0.3" in workflow
+    # Der Workflow muss genau die Refs ziehen, die in der Lockdatei stehen.
+    # Frueher stand hier ein fester Tag - der blieb fuenf Modulstaende lang
+    # stehen, waehrend der Host laengst neuere Module haette bauen sollen.
+    lock = json.loads((ROOT / "dependencies/modules.lock.json").read_text(encoding="utf-8"))
+    for modul in lock["modules"]:
+        assert f"'{modul['default_ref']}'" in workflow, (
+            f"{modul['id']}: Workflow zieht nicht {modul['default_ref']}"
+        )
     # Der Erst-Release ging bewusst unsigniert heraus. Seither prueft der
     # Updater fail-closed: ein Release ohne Signatur waere fuer jede
     # installierte Fassung tot.

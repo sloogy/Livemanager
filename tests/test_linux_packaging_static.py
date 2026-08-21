@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -10,8 +11,14 @@ def test_linux_release_pipeline_exists_and_is_platform_correct():
     assert "LifePlannerUpdater" in build
     assert "Linux_x86_64_Portable.tar.gz" in workflow
     assert "ubuntu-latest" in workflow
-    assert "v2.2.63" in workflow
-    assert "v1.0.3" in workflow
+    # Der Workflow muss genau die Refs ziehen, die in der Lockdatei stehen.
+    # Frueher stand hier ein fester Tag - der blieb fuenf Modulstaende lang
+    # stehen, waehrend der Host laengst neuere Module haette bauen sollen.
+    lock = json.loads((ROOT / "dependencies/modules.lock.json").read_text(encoding="utf-8"))
+    for modul in lock["modules"]:
+        assert f"'{modul['default_ref']}'" in workflow, (
+            f"{modul['id']}: Workflow zieht nicht {modul['default_ref']}"
+        )
     # Der Erst-Release ging bewusst unsigniert heraus. Seither prueft der
     # Updater fail-closed: ein Release ohne Signatur waere fuer jede
     # installierte Fassung tot.

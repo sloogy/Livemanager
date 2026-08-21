@@ -1,4 +1,4 @@
-# LifePlanner 0.5.10 – Multi-Repository-Plattform mit GitHub-Modulinstaller
+# LifePlanner 0.5.11 – Multi-Repository-Plattform mit GitHub-Modulinstaller
 
 LifePlanner ist der modulare Desktop-Host. **BudgetManager und FPM bleiben vollständig eigenständige Git-Repositories** mit eigener Versionshistorie, eigenen Issues, Tests, Releases und Standalone-Builds.
 
@@ -126,14 +126,14 @@ LIFEPLANNER_UPDATE_PUBLIC_KEY_B64
 
 ## Windows-Release
 
-Ein Tag wie `lifeplanner-v0.5.10` baut aus den drei getrennten Checkouts:
+Ein Tag wie `lifeplanner-v0.5.11` baut aus den drei getrennten Checkouts:
 
-- `LifePlanner_0.5.10_Windows_Portable.zip`
-- `LifePlanner_Core_0.5.10_Windows_x86_64.lpupdate`
+- `LifePlanner_0.5.11_Windows_Portable.zip`
+- `LifePlanner_Core_0.5.11_Windows_x86_64.lpupdate`
 - `budgetmanager_2.2.63_Windows_x86_64.lpmodule`
 - `fpm_1.0.3_Windows_x86_64.lpmodule`
 - `freizeitmanager_0.1.1_Windows_x86_64.lpmodule`
-- `LifePlanner_0.5.10_Windows_Setup.exe`
+- `LifePlanner_0.5.11_Windows_Setup.exe`
 - `lifeplanner-latest.json`
 - `module-source-provenance.json`
 
@@ -141,7 +141,7 @@ Der bewusste erste Release wird mit `--allow-unsigned` gebaut. Dieser Schalter m
 
 Der Windows-Setup wird mitveröffentlicht. Er ist in diesem Release ebenfalls unsigniert, weshalb Windows SmartScreen beim Start warnt. Sein automatischer GitHub-Bootstrap akzeptiert aus Sicherheitsgründen weiterhin nur signierte Remote-Pakete; die einzelnen unsignierten `.lpmodule` lassen sich stattdessen lokal mit manueller Vertrauensbestätigung installieren. Das Portable-Paket bleibt die Alternative ohne Installation.
 
-**Für Windows-Endnutzer sind nur `LifePlanner_0.5.10_Windows_Setup.exe` und `LifePlanner_0.5.10_Windows_Portable.zip` zum direkten Start gedacht.** Das Portable-ZIP muss vollständig entpackt werden. `LifePlanner_Core_*.lpupdate` ist ausschließlich ein Maschinenpaket für den zentralen Updater und darf nicht manuell geöffnet oder gestartet werden. Ein kleiner `LifePlanner.exe`-Launcher erkennt unvollständig entpackte Portable-Pakete und zeigt statt eines Python-DLL-Fehlers eine verständliche Meldung.
+**Für Windows-Endnutzer sind nur `LifePlanner_0.5.11_Windows_Setup.exe` und `LifePlanner_0.5.11_Windows_Portable.zip` zum direkten Start gedacht.** Das Portable-ZIP muss vollständig entpackt werden. `LifePlanner_Core_*.lpupdate` ist ausschließlich ein Maschinenpaket für den zentralen Updater und darf nicht manuell geöffnet oder gestartet werden. Ein kleiner `LifePlanner.exe`-Launcher erkennt unvollständig entpackte Portable-Pakete und zeigt statt eines Python-DLL-Fehlers eine verständliche Meldung.
 
 Der Windows-Installer enthält **keine eingebetteten BudgetManager- oder FPM-Binärdateien mehr**. Beim Öffnen der Seite „Programme auswählen“ fragt er die konfigurierten GitHub-Repositories ab, zeigt verfügbare `.lpmodule`-Releases an und lädt nur die ausgewählten Programme herunter. Mindestens ein Programm ist Pflicht.
 

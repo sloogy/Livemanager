@@ -1,4 +1,5 @@
 import json
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -7,8 +8,12 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_multi_repo_lock_pins_integrated_module_versions():
     lock = json.loads((ROOT / "dependencies/modules.lock.json").read_text(encoding="utf-8"))
     modules = {item["id"]: item for item in lock["modules"]}
-    assert modules["budgetmanager"]["version"] == "2.2.63"
-    assert modules["fpm"]["version"] == "1.0.3"
+    # Die Lockdatei ist die Quelle - ein Test, der ihre Versionen nachschreibt,
+    # muss bei jedem Release angefasst werden. Geprueft wird stattdessen, dass
+    # jedes Modul festgenagelt ist und Version und Ref zusammenpassen.
+    for modul in modules.values():
+        assert re.fullmatch(r"\d+\.\d+\.\d+", modul["version"]), modul["id"]
+        assert modul["default_ref"] == f"v{modul['version']}", modul["id"]
     assert modules["budgetmanager"]["build_spec"] == "BudgetManager.spec"
     assert modules["fpm"]["build_spec"] == "FPM.spec"
 

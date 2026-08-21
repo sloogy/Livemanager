@@ -1,5 +1,49 @@
 # Changelog
 
+## 0.5.11 – Signierte Releases und eine sichtbare Brücke
+
+### Die Suite baut endlich mit aktuellen Modulen
+
+Der Host zog seine Module aus festgeschriebenen Ständen — BudgetManager 2.2.63,
+FPM 1.0.3, FreizeitManager 0.1.1 —, während die Programme längst weiter waren.
+Wer den LifePlanner installierte, bekam eine fünf Stände alte Suite.
+
+- Die Lockdatei zeigt jetzt auf BudgetManager 2.2.68, FPM 1.0.8 und
+  FreizeitManager 0.1.6.
+- Die Tests nennen keine festen Versionen mehr, sondern prüfen, dass Lockdatei
+  und Release-Workflow übereinstimmen. Genau weil sie Versionen nachschrieben,
+  blieb der Rückstand so lange unbemerkt.
+
+### Die Integrationsseite zeigt beide Richtungen der Brücke
+
+Bisher wurde nur `fpm_to_budgetmanager.jsonl` gelesen. Die Gegenrichtung und
+die Sparziel-Spiegelung des BudgetManagers sah der Host gar nicht an — genau
+die beiden Dateien, deren Ausbleiben als „der Transfer funktioniert nicht"
+auffällt.
+
+- Alle drei Dateien werden gelesen und einzeln ausgewiesen.
+- Unterschieden wird zwischen „Datei fehlt" und „Datei ist leer": Fehlt sie,
+  hat das schreibende Programm noch nichts abgelegt — dann liegt es dort und
+  nicht an der Brücke.
+- Ungültige Zeilen werden gemeldet statt verschluckt.
+
+### Releases werden signiert
+
+Der Erst-Release ging bewusst unsigniert heraus; der Workflow erzwang das
+sogar. Der Updater prüft seine Manifeste aber fail-closed — solange keine
+Signatur mitkommt, ist jedes weitere Release für eine installierte Fassung
+wertlos.
+
+- Die Signierschlüssel liegen jetzt im Repository hinterlegt.
+- Beide Gates kehren sich um: Windows und Linux brechen ab, wenn die Signatur
+  *fehlt*, statt wenn sie da ist.
+
+### Systemvorgabe wählt aus einem Designpaar
+
+Die Auswahl „Systemvorgabe" gab es schon, aber sie liess offen, welche Designs
+gemeint sind. Zu einem dunklen Profil gibt es kein helles Gegenstück, das der
+Host erfinden könnte — darum wählen Sie beide Seiten selbst.
+
 ## 0.5.9 – Gemeinsamer Designkatalog
 
 ### Ein gemeinsamer Designkatalog
