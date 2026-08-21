@@ -19,6 +19,9 @@ MAX_MANIFEST_BYTES = 2 * 1024 * 1024
 MAX_COMPONENT_BYTES = 1024 * 1024 * 1024
 MAX_EXTRACTED_BYTES = 2 * 1024 * 1024 * 1024
 MAX_ZIP_ENTRIES = 100_000
+# Ein Archiv kann die Größengrenze unterlaufen und trotzdem beim Entpacken
+# explodieren. Derselbe Wert gilt in BudgetManager, FPM und FreizeitManager.
+MAX_COMPRESSION_RATIO = 250
 
 
 class UpdateIOError(RuntimeError):
@@ -209,6 +212,10 @@ def secure_extract_zip(archive_path: Path, destination: Path) -> None:
                 total += max(0, int(info.file_size))
                 if total > MAX_EXTRACTED_BYTES:
                     raise UpdateIOError("Entpackte Update-Daten überschreiten die maximale Größe")
+                if (info.compress_size > 0
+                        and info.file_size / info.compress_size > MAX_COMPRESSION_RATIO):
+                    raise UpdateIOError(
+                        f"Auffällige Kompressionsrate im Update-Archiv: {info.filename!r}")
                 target = (destination / Path(*parts)).resolve()
                 try:
                     target.relative_to(root)
