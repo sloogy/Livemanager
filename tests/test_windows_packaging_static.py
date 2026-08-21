@@ -27,8 +27,11 @@ def test_windows_release_pipeline_stages_all_three_apps_from_separate_repos():
     assert "Checkout BudgetManager repository" in workflow
     assert "Checkout FPM repository" in workflow
     assert "v1.0.3" in workflow
-    assert "--allow-unsigned" in workflow
-    assert "First release must stay explicitly unsigned" in workflow
+    # Der Erst-Release ging bewusst unsigniert heraus. Seither prueft der
+    # Updater fail-closed: ein Release ohne Signatur waere fuer jede
+    # installierte Fassung tot.
+    assert "--allow-unsigned" not in workflow
+    assert "LIFEPLANNER_UPDATE_PRIVATE_KEY_B64" in workflow
     assert "LifePlanner_*_Windows_Portable.zip" in workflow
     publish_line = next(line for line in workflow.splitlines() if "gh release upload" in line)
     assert "Windows_Setup.exe" in publish_line

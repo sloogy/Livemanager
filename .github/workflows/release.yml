@@ -83,19 +83,23 @@ jobs:
           LIFEPLANNER_RELEASE_BASE_URL: https://github.com/${{ github.repository }}/releases/download/${{ env.LIFEPLANNER_RELEASE_TAG }}
           BUDGETMANAGER_REPOSITORY: ${{ vars.BUDGETMANAGER_REPOSITORY || 'sloogy/Budgetmanager' }}
           FPM_REPOSITORY: ${{ vars.FPM_REPOSITORY || 'sloogy/FPM' }}
+          LIFEPLANNER_UPDATE_PRIVATE_KEY_B64: ${{ secrets.LIFEPLANNER_UPDATE_PRIVATE_KEY_B64 }}
+          LIFEPLANNER_UPDATE_PUBLIC_KEY_B64: ${{ vars.LIFEPLANNER_UPDATE_PUBLIC_KEY_B64 }}
         run: >-
           python tools/build_release.py
-          --allow-unsigned
           --budgetmanager-source "${{ env.LIFEPLANNER_BUDGETMANAGER_SOURCE }}"
           --fpm-source "${{ env.LIFEPLANNER_FPM_SOURCE }}"
           --freizeitmanager-source "${{ env.LIFEPLANNER_FREIZEITMANAGER_SOURCE }}"
 
-      - name: Verify explicit unsigned first-release assets and provenance
+      - name: Verify signed assets and provenance
         shell: pwsh
         working-directory: lifeplanner
         run: |
-          if (Test-Path "release/update-assets/lifeplanner-latest.json.sig") { throw "First release must stay explicitly unsigned" }
-          if ((Get-ChildItem "release/update-assets/*.lpmodule" | Measure-Object).Count -lt 2) { throw "Unsigned module packages missing" }
+          # Der Erst-Release ging bewusst unsigniert heraus. Seither prueft der
+          # Updater fail-closed - ein Release ohne Signatur waere fuer jede
+          # installierte Fassung tot, darum kehrt sich der Gate um.
+          if (-not (Test-Path "release/update-assets/lifeplanner-latest.json.sig")) { throw "lifeplanner-latest.json.sig fehlt - sind LIFEPLANNER_UPDATE_PRIVATE_KEY_B64 (Secret) und LIFEPLANNER_UPDATE_PUBLIC_KEY_B64 (Variable) gesetzt?" }
+          if ((Get-ChildItem "release/update-assets/*.lpmodule" | Measure-Object).Count -lt 2) { throw "Module packages missing" }
           if (-not (Test-Path "release/module-source-provenance.json")) { throw "Module source provenance missing" }
           if (-not (Test-Path "release/LifePlannerInstallerBootstrap.exe")) { throw "Installer bootstrap missing" }
           if (-not (Test-Path "release/LifePlanner_Installer_Source/installer-module-sources.json")) { throw "Installer module sources missing" }
@@ -201,13 +205,14 @@ jobs:
         working-directory: lifeplanner
         run: python tools/validate_release.py --with-modules
 
-      - name: Build explicit unsigned first-release portable and updater assets
+      - name: Build signed portable and updater assets
         working-directory: lifeplanner
         env:
           LIFEPLANNER_RELEASE_BASE_URL: https://github.com/${{ github.repository }}/releases/download/${{ env.LIFEPLANNER_RELEASE_TAG }}
+          LIFEPLANNER_UPDATE_PRIVATE_KEY_B64: ${{ secrets.LIFEPLANNER_UPDATE_PRIVATE_KEY_B64 }}
+          LIFEPLANNER_UPDATE_PUBLIC_KEY_B64: ${{ vars.LIFEPLANNER_UPDATE_PUBLIC_KEY_B64 }}
         run: >-
           python tools/build_linux_release.py
-          --allow-unsigned
           --budgetmanager-source "${{ env.LIFEPLANNER_BUDGETMANAGER_SOURCE }}"
           --fpm-source "${{ env.LIFEPLANNER_FPM_SOURCE }}"
           --freizeitmanager-source "${{ env.LIFEPLANNER_FREIZEITMANAGER_SOURCE }}"
@@ -217,7 +222,7 @@ jobs:
         run: |
           test -f "release-linux/LifePlanner_${LIFEPLANNER_VERSION}_Linux_x86_64_Portable.tar.gz"
           test -f "release-linux/LifePlanner_${LIFEPLANNER_VERSION}_Linux_x86_64_Portable.zip"
-          test ! -f release-linux/update-assets/lifeplanner-latest-linux.json.sig
+          test -f release-linux/update-assets/lifeplanner-latest-linux.json.sig
           test "$(find release-linux/update-assets -maxdepth 1 -name '*.lpmodule' -type f | wc -l)" -ge 2
           test -f release-linux/module-source-provenance-linux.json
 
