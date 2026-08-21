@@ -268,13 +268,33 @@ class MainWindow(QMainWindow):
         self.module_manager_page.refresh_process_states()
 
     def _refresh_bridge(self) -> None:
+        """Zeigt alle drei Brückendateien statt nur der FPM-Richtung.
+
+        Entscheidend ist die Unterscheidung zwischen "Datei fehlt" und "Datei
+        ist leer": Fehlt sie, hat das schreibende Programm noch nichts
+        abgelegt - dann liegt es dort, nicht an der Brücke.
+        """
         summary = summarize_fpm_outbox(self.profile_id)
-        currencies = ", ".join(summary.currencies) or "-"
-        self.bridge_summary.setText(
-            f"FPM → BudgetManager: {summary.fpm_records} Vorschläge · "
-            f"Summe {summary.fpm_total:.2f} · Währungen {currencies} · "
-            f"ungültige Zeilen {summary.invalid_lines}\n{summary.source_path}"
-        )
+        zeilen: list[str] = []
+        for befund in summary.dateien:
+            if not befund.vorhanden:
+                zeilen.append(
+                    f"{befund.name}: noch nichts geschrieben "
+                    f"({befund.pfad.name})"
+                )
+                continue
+            waehrungen = ", ".join(befund.waehrungen) or "-"
+            hinweis = (
+                f" · ungültige Zeilen {befund.ungueltige_zeilen}"
+                if befund.ungueltige_zeilen
+                else ""
+            )
+            zeilen.append(
+                f"{befund.name}: {befund.eintraege} Einträge · "
+                f"Summe {befund.summe:.2f} · Währungen {waehrungen}{hinweis}"
+            )
+        zeilen.append(str(bridge_dir(self.profile_id)))
+        self.bridge_summary.setText("\n".join(zeilen))
 
     def _create_backup(self) -> None:
         try:
