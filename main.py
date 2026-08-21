@@ -54,6 +54,23 @@ def main() -> int:
     app.setApplicationName(APP_NAME)
     app.setApplicationVersion(APP_VERSION)
     app.setOrganizationName("LifePlanner")
+
+    # Nur eine Instanz je Datenordner. Zwei Hosts wuerden dieselben Module
+    # starten und in denselben Brueckenordner schreiben - die Module haetten
+    # dann zwei Eltern, und beim Update wuerde einer dem anderen die Dateien
+    # unter den Fuessen wegziehen.
+    from lifeplanner_core.paths import data_root
+    from lifeplanner_core.single_instance import SingleInstanceGuard
+
+    guard = SingleInstanceGuard(
+        data_root() / "lifeplanner.instance.lock", app_id="LifePlanner"
+    )
+    frei, grund = guard.acquire()
+    if not frei:
+        QMessageBox.information(None, APP_NAME, grund)
+        return 0
+    app.aboutToQuit.connect(guard.release)
+
     settings = SettingsStore()
     package = args.install_module or args.module_package
     if package is not None and package.suffix.lower() not in {".lpmodule", ".zip"}:
