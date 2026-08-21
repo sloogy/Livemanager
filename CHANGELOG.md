@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.5.12 – Dreisprachige Oberfläche
+
+### Der Host spricht jetzt Deutsch, Englisch und Französisch
+
+LifePlanner war als einziges Programm der Suite einsprachig. Seine Texte
+standen fest im Quelltext, während BudgetManager, FPM und FreizeitManager
+längst drei Sprachen sprachen. Wer die Module auf Französisch benutzte, sah
+den Rahmen darum weiterhin auf Deutsch.
+
+- 93 Texte liegen jetzt als Sprachdateien vor; die Sprache wählt man auf der
+  Darstellungsseite.
+- Eine fehlende oder kaputte Sprachdatei lässt den Start weiterlaufen.
+- Ein Test verhindert, dass neue feste Texte in die Oberfläche zurückkommen.
+
+### Die Oberfläche wächst mit der Schriftgröße
+
+Feste Pixelwerte setzten sich über die Profilschrift hinweg. Radien folgen
+jetzt der Staffelung des BudgetManagers, der Design-Vorlage der Suite.
+
 ## 0.5.11 – Signierte Releases und eine sichtbare Brücke
 
 ### Die Suite baut endlich mit aktuellen Modulen
