@@ -51,13 +51,47 @@ def create_profile_backup(profile_id: str) -> Path:
             archive.writestr("backup_manifest.json", json.dumps(manifest, ensure_ascii=False, indent=2))
         os.replace(temp, target)
         checksum = _sha256(target)
-        target.with_suffix(target.suffix + ".sha256").write_text(f"{checksum}  {target.name}\n", encoding="ascii")
+        pruefsumme = target.with_suffix(target.suffix + ".sha256")
+        pruefsumme.write_text(f"{checksum}  {target.name}\n", encoding="ascii")
         verify_backup(target)
+        # Das Archiv enthält den ganzen Profilordner - Einstellungen, Brücke,
+        # Moduldaten. Also dieselben Rechte wie der Ordner selbst.
+        from .file_permissions import secure_file
+
+        secure_file(target)
+        secure_file(pruefsumme)
+        _alte_sicherungen_entfernen(target_dir, profile_id)
         return target
     except Exception as exc:
         temp.unlink(missing_ok=True)
         target.unlink(missing_ok=True)
         raise BackupError(f"Backup fehlgeschlagen: {exc}") from exc
+
+
+# Wie viele Sicherungen je Profil aufgehoben werden. Jede enthält den
+# vollständigen Profilordner; ohne Grenze füllt sich die Platte still.
+SICHERUNGEN_AUFBEWAHREN = 20
+
+
+def _alte_sicherungen_entfernen(target_dir: Path, profile_id: str) -> None:
+    """Behält die jüngsten Sicherungen dieses Profils, entfernt ältere.
+
+    Nur die selbst erzeugten: Der Name trägt Profil und Zeitstempel, und was
+    jemand von Hand dort abgelegt hat, passt nicht auf dieses Muster.
+    """
+    vorhanden = sorted(
+        target_dir.glob(f"lifeplanner-{profile_id}-*.zip"),
+        key=lambda p: p.name,
+        reverse=True,
+    )
+    for veraltet in vorhanden[SICHERUNGEN_AUFBEWAHREN:]:
+        for datei in (veraltet, veraltet.with_suffix(veraltet.suffix + ".sha256")):
+            try:
+                datei.unlink(missing_ok=True)
+            except OSError:
+                # Eine nicht löschbare Altsicherung darf das Sichern nicht
+                # scheitern lassen - die neue liegt bereits.
+                return
 
 
 def verify_backup(path: Path) -> dict:
