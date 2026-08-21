@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import logging
+from datetime import datetime
 import os
 import threading
 from copy import deepcopy
@@ -15,6 +17,8 @@ from .repositories import CORE_LATEST_MANIFEST_URL
 # Rückfall aussehen.
 INITIAL_LIGHT_THEME = "V2 Hell – Neon Cyan"
 INITIAL_DARK_THEME = "V2 Dunkel – Graphite Cyan"
+
+_log = logging.getLogger(__name__)
 
 _DEFAULTS: dict[str, Any] = {
     "schema": 1,
@@ -71,11 +75,39 @@ class SettingsStore:
             if self.path.is_file():
                 try:
                     raw = json.loads(self.path.read_text(encoding="utf-8"))
+                except (OSError, json.JSONDecodeError) as fehler:
+                    self._beiseitelegen(fehler)
+                    self._data = deepcopy(_DEFAULTS)
+                else:
                     if isinstance(raw, dict):
                         self._data = self._merge(deepcopy(_DEFAULTS), raw)
-                except (OSError, json.JSONDecodeError):
-                    self._data = deepcopy(_DEFAULTS)
+                    else:
+                        # Gültiges JSON, aber kein Objekt - eine Liste oder eine
+                        # nackte Zahl. Genauso unbrauchbar wie kaputtes JSON.
+                        self._beiseitelegen(
+                            ValueError(f"Kein JSON-Objekt: {type(raw).__name__}")
+                        )
+                        self._data = deepcopy(_DEFAULTS)
             return deepcopy(self._data)
+
+    def _beiseitelegen(self, grund: Exception) -> None:
+        """Rettet eine unlesbare Einstellungsdatei, statt sie zu überschreiben.
+
+        Ohne das war sie beim nächsten ``save()`` endgültig weg - samt allem,
+        was darin stand. Oft ist nur ein Zeichen falsch und die Datei ließe
+        sich von Hand retten; dafür muss sie aber noch da sein.
+        """
+        marke = datetime.now().strftime("%Y%m%d-%H%M%S")
+        ziel = self.path.with_name(f"{self.path.name}.kaputt-{marke}")
+        try:
+            self.path.replace(ziel)
+        except OSError as fehler:
+            _log.warning("Beschädigte %s ließ sich nicht sichern: %s",
+                         self.path.name, fehler)
+            return
+        _log.warning("%s war unlesbar (%s) - beiseitegelegt als %s, "
+                     "es gelten die Standardwerte",
+                     self.path.name, grund, ziel.name)
 
     @staticmethod
     def _merge(base: dict[str, Any], incoming: dict[str, Any]) -> dict[str, Any]:
