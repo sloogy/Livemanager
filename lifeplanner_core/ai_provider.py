@@ -3,11 +3,31 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from urllib.parse import urlparse
-from urllib.request import Request, urlopen
+from urllib.request import (
+    HTTPHandler,
+    HTTPSHandler,
+    OpenerDirector,
+    Request,
+)
 
 
 class AIProviderError(RuntimeError):
     pass
+
+
+def _nur_http_opener() -> OpenerDirector:
+    """Ein Opener, der ausschließlich http und https kennt.
+
+    ``urlopen`` beherrscht auch ``file:``, ``ftp:`` und was sonst registriert
+    ist. Der Endpunkt wird zwar geprüft, aber die Prüfung ist eine Zeile, die
+    jemand versehentlich verschieben kann - ein Opener ohne FileHandler kann
+    eine lokale Datei dagegen gar nicht erst öffnen. Sicherheit aus dem Aufbau
+    statt aus einer Abfrage.
+    """
+    opener = OpenerDirector()
+    opener.add_handler(HTTPHandler())
+    opener.add_handler(HTTPSHandler())
+    return opener
 
 
 @dataclass(frozen=True)
@@ -23,7 +43,9 @@ class OllamaProvider:
 
     def healthcheck(self) -> bool:
         try:
-            with urlopen(self._validated_base() + "/api/tags", timeout=self.timeout) as response:
+            with _nur_http_opener().open(
+                self._validated_base() + "/api/tags", timeout=self.timeout
+            ) as response:
                 return 200 <= response.status < 300
         except Exception:
             return False
@@ -39,7 +61,9 @@ class OllamaProvider:
             headers={"Content-Type": "application/json"},
         )
         try:
-            with urlopen(request, timeout=max(self.timeout, 60.0)) as response:
+            with _nur_http_opener().open(
+                request, timeout=max(self.timeout, 60.0)
+            ) as response:
                 result = json.loads(response.read().decode("utf-8"))
         except Exception as exc:
             raise AIProviderError(f"Ollama-Anfrage fehlgeschlagen: {exc}") from exc

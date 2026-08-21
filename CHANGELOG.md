@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.5.13 – Sicherheit und Stabilität
+
+### Sicherheit
+
+- **Der Profilordner liegt nicht mehr offen.** Er trägt die Einstellungen, die
+  Brückendateien mit Buchungen und Sparzielen sowie die Moduldaten. Angelegt
+  wurde er mit dem Standard-umask, auf typischen Linux-Systemen also 0755.
+  Jetzt 0700, und die Profilsicherungen bekommen 0600.
+- **Update-Archive** werden zusätzlich auf ihre Kompressionsrate geprüft. Ein
+  Archiv kann die Grössengrenze unterlaufen und beim Entpacken trotzdem
+  explodieren.
+
+### Stabilität
+
+- **Nur eine Instanz je Datenordner.** Zwei Hosts hätten dieselben Module
+  gestartet und in denselben Brückenordner geschrieben — beim Update zöge
+  einer dem anderen die Dateien unter den Füssen weg.
+- **Eine unlesbare Einstellungsdatei** wird beiseitegelegt statt
+  überschrieben. Neu erkannt wird dabei auch gültiges JSON, das kein Objekt
+  ist — das wurde vorher kommentarlos verworfen.
+- **Modul-Logs wachsen nicht mehr unbegrenzt.** Sie werden beim Modulstart
+  gerollt; ein `RotatingFileHandler` greift dort nicht, weil der Modulprozess
+  selbst in den Dateideskriptor schreibt.
+- **Profilsicherungen** werden auf die zwanzig jüngsten je Profil begrenzt.
+
+### Darstellung
+
+- Die Oberfläche wächst mit der eingestellten Schrift, mit abgestuften Radien
+  nach dem Vorbild des BudgetManagers.
+
 ## 0.5.12 – Dreisprachige Oberfläche
 
 ### Der Host spricht jetzt Deutsch, Englisch und Französisch

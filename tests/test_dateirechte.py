@@ -68,3 +68,34 @@ def test_der_inhalt_bleibt_lesbar(tmp_path):
     pfad.write_text("inhalt", encoding="utf-8")
     secure_file(pfad)
     assert pfad.read_text(encoding="utf-8") == "inhalt"
+
+
+# ── Der KI-Endpunkt kann keine lokalen Dateien lesen ────────────────────────
+
+def test_der_opener_kennt_nur_http_und_https():
+    """``urlopen`` beherrscht auch ``file:``. Der Endpunkt wird zwar geprueft,
+    aber die Pruefung ist eine Zeile, die jemand versehentlich verschieben
+    kann - ein Opener ohne FileHandler kann eine lokale Datei gar nicht erst
+    oeffnen."""
+    from lifeplanner_core.ai_provider import _nur_http_opener
+
+    opener = _nur_http_opener()
+    assert set(opener.handle_open) == {"http", "https"}, opener.handle_open
+
+
+def test_ein_datei_endpunkt_wird_abgewiesen(tmp_path):
+    from lifeplanner_core.ai_provider import AIProviderError, OllamaProvider
+
+    geheim = tmp_path / "geheim.txt"
+    geheim.write_text("nicht fuer die KI", encoding="utf-8")
+
+    with pytest.raises(AIProviderError):
+        OllamaProvider(endpoint=f"file://{geheim}")._validated_base()
+
+
+def test_ein_fremder_host_wird_abgewiesen():
+    """Aus Datenschutzgruenden nur lokale Endpunkte."""
+    from lifeplanner_core.ai_provider import AIProviderError, OllamaProvider
+
+    with pytest.raises(AIProviderError):
+        OllamaProvider(endpoint="https://beispiel.invalid")._validated_base()
