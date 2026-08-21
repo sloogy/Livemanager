@@ -217,31 +217,45 @@ def build_stylesheet(profile: ThemeProfile) -> str:
     field_bg = profile.color("dropdown_bg", bg_panel)
     field_text = profile.color("dropdown_text", text)
     field_border = profile.color("dropdown_border", grid)
+
+    # Groessen wachsen mit der eingestellten Schrift, wie in den Modulen.
+    # Vorher standen hier feste Pixelwerte: Wer die Schrift hochstellte, bekam
+    # groesseren Text in unveraendert engen Schaltflaechen.
+    scale = max(0.85, min(1.50, profile.font_size / 10.0))
+
+    def px(wert: float) -> int:
+        return max(1, round(wert * scale))
+
+    # Abgestufte Radien nach dem Vorbild des BudgetManagers: je groesser die
+    # Flaeche, desto runder die Ecke.
+    radius_feld = px(4)
+    radius = px(6)
+    radius_karte = px(8)
     return f"""
 QMainWindow, QWidget {{ background: {bg_app}; color: {text}; }}
 QLabel {{ color: {text}; background: transparent; }}
-QListWidget {{ background: {bg_side}; color: {text}; border: 0; padding: 18px 8px; font-size: 15px; }}
-QListWidget::item {{ padding: 12px; border-radius: 8px; margin: 2px 0; }}
+QListWidget {{ background: {bg_side}; color: {text}; border: 0; padding: {px(18)}px {px(8)}px; font-size: {px(15)}px; }}
+QListWidget::item {{ padding: 12px; border-radius: {radius_karte}px; margin: 2px 0; }}
 QListWidget::item:hover {{ background: {hover_bg}; color: {hover_text}; }}
 QListWidget::item:selected {{ background: {sel_bg}; color: {sel_text}; }}
-QFrame#moduleCard {{ background: {bg_panel}; border: 1px solid {grid}; border-radius: 12px; padding: 14px; }}
+QFrame#moduleCard {{ background: {bg_panel}; border: 1px solid {grid}; border-radius: {px(12)}px; padding: 14px; }}
 QLabel#moduleStatus {{ font-weight: 600; color: {accent}; }}
-QLabel#notice {{ background: {bg_panel}; border: 1px solid {grid}; border-radius: 8px; padding: 12px; color: {text_dim}; }}
-QLabel#errorNotice {{ background: {bg_panel}; border: 1px solid {profile.color('negativ_text', '#e74c3c')}; border-radius: 8px; padding: 12px; }}
-QPushButton {{ background: {field_bg}; color: {field_text}; border: 1px solid {field_border}; min-height: 36px; padding: 0 14px; border-radius: 8px; }}
+QLabel#notice {{ background: {bg_panel}; border: 1px solid {grid}; border-radius: {radius_karte}px; padding: 12px; color: {text_dim}; }}
+QLabel#errorNotice {{ background: {bg_panel}; border: 1px solid {profile.color('negativ_text', '#e74c3c')}; border-radius: {radius_karte}px; padding: 12px; }}
+QPushButton {{ background: {field_bg}; color: {field_text}; border: 1px solid {field_border}; min-height: {px(36)}px; padding: 0 14px; border-radius: {radius_karte}px; }}
 QPushButton:hover {{ background: {hover_bg}; color: {hover_text}; }}
 QPushButton:disabled {{ color: {text_dim}; }}
 QPushButton#primaryButton {{ background: {accent}; color: {profile.color('akzent_text', sel_text)}; border: 1px solid {accent}; font-weight: 700; }}
-QComboBox, QLineEdit, QPlainTextEdit, QTextEdit, QSpinBox {{ background: {field_bg}; color: {field_text}; border: 1px solid {field_border}; border-radius: 6px; padding: 4px 8px; }}
+QComboBox, QLineEdit, QPlainTextEdit, QTextEdit, QSpinBox {{ background: {field_bg}; color: {field_text}; border: 1px solid {field_border}; border-radius: {radius}px; padding: {px(4)}px {px(8)}px; }}
 QComboBox QAbstractItemView {{ background: {field_bg}; color: {field_text}; selection-background-color: {profile.color('dropdown_selection', sel_bg)}; selection-color: {profile.color('dropdown_selection_text', sel_text)}; border: 1px solid {field_border}; }}
 QCheckBox, QRadioButton {{ color: {text}; background: transparent; }}
-QGroupBox {{ border: 1px solid {grid}; border-radius: 8px; margin-top: 12px; padding-top: 10px; }}
+QGroupBox {{ border: 1px solid {grid}; border-radius: {radius_karte}px; margin-top: 12px; padding-top: 10px; }}
 QGroupBox::title {{ subcontrol-origin: margin; left: 10px; padding: 0 4px; color: {text_dim}; }}
 QScrollArea {{ border: 0; background: {bg_app}; }}
 QTableView, QTreeView, QListView {{ background: {profile.color('tabelle_hintergrund', bg_panel)}; alternate-background-color: {profile.color('tabelle_alt', bg_panel)}; color: {text}; gridline-color: {grid}; selection-background-color: {sel_bg}; selection-color: {sel_text}; }}
 QHeaderView::section {{ background: {profile.color('tabelle_header', bg_panel)}; color: {profile.color('tabelle_header_text', text)}; border: 0; border-bottom: 1px solid {grid}; padding: 6px; }}
-QProgressBar {{ background: {bg_panel}; border: 1px solid {grid}; border-radius: 6px; text-align: center; color: {text}; }}
-QProgressBar::chunk {{ background: {accent}; border-radius: 6px; }}
+QProgressBar {{ background: {bg_panel}; border: 1px solid {grid}; border-radius: {radius}px; text-align: center; color: {text}; }}
+QProgressBar::chunk {{ background: {accent}; border-radius: {radius}px; }}
 QStatusBar {{ background: {bg_panel}; color: {text_dim}; border-top: 1px solid {grid}; }}
 """.strip()
 
