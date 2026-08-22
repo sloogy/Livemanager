@@ -99,10 +99,17 @@ und zeigt davon 6 an — ein Dashboard, das man scrollen muss, wird nicht gelese
 
 ## Wer schreibt bereits
 
-| Modul | Meldungen |
-|---|---|
-| BudgetManager | überzogene Budgets, Sparziele kurz vor oder nach dem Termin, erreichte Sparziele |
+| Modul | Meldungen | Höchste Stufe |
+|---|---|---|
+| BudgetManager | überzogene Budgets, Sparziele kurz vor oder nach dem Termin, erreichte Sparziele | `kritisch` |
+| FountainPen Manager | die Sammlungsprüfung (`build_collection_health`): Befüllungen über dem Safety-Limit, gesperrte Füller, Tinten zur Neige, offene Garantien | `kritisch` |
+| FreizeitManager | die Vorschläge des Fokus-Cockpits, höchstens drei | `warnung` |
 
-FPM und FreizeitManager sind vorgesehen; der FreizeitManager liefert seine
-Fokus-Vorschläge bisher über das ältere `freizeitmanager.focus.v1`, aus dem
-dieses Schema hervorgegangen ist.
+**Der FreizeitManager kennt bewusst kein `kritisch`.** Eine Freundschaft, die
+still geworden ist, ist kein Alarm. Das Programm ist ausdrücklich so gebaut,
+dass es keinen Schuldenberg aufbaut; eine rote Meldung neben einem überzogenen
+Budget würde genau das wieder einführen. Ein Test hält das fest.
+
+Der FreizeitManager schreibt weiterhin auch `freizeitmanager.focus.v1` — das
+trägt die Zählwerte der Fokus-Zusammenfassung, diese Datei die Meldungen. Aus
+jenem Format ist dieses hervorgegangen.
