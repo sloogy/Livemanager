@@ -1,8 +1,34 @@
-# LifePlanner 0.5.15 – Multi-Repository-Plattform mit GitHub-Modulinstaller
+# LifePlanner 0.5.15
 
-LifePlanner ist der modulare Desktop-Host. **BudgetManager und FPM bleiben vollständig eigenständige Git-Repositories** mit eigener Versionshistorie, eigenen Issues, Tests, Releases und Standalone-Builds.
+Der LifePlanner ist das Dach über den Programmen dieser Suite: BudgetManager, FountainPen Manager und FreizeitManager. Jedes davon ist ein eigenständiges Programm und läuft auch ohne ihn — der LifePlanner bringt sie zusammen.
 
-Der LifePlanner-Core enthält keinen eingecheckten Quellcode dieser beiden Anwendungen. Er verwaltet nur:
+## Was du damit tust
+
+**Alles an einem Ort öffnen.** Ein Fenster, eine Seitenleiste, ein Klick pro Programm. Kein Suchen im Startmenü, kein Fensterwald.
+
+**Auf einen Blick sehen, was ansteht.** Das Dashboard sammelt, was die Programme melden: Budgetwarnungen, fällige Reinigungen, die nächsten Kontaktvorschläge. Was dort steht, kommt von den Programmen selbst — der LifePlanner rechnet nichts nach.
+
+**Programme installieren und aktuell halten.** Neue Module kommen direkt aus ihren GitHub-Releases; Updates laufen zentral über eine Stelle statt drei. Was nicht signiert ist, wird als solches gezeigt und braucht eine ausdrückliche Bestätigung.
+
+**Mehrere Profile führen.** Getrennte Datenbestände nebeneinander — etwa privat und geschäftlich — jedes mit eigenen Daten und eigenen Sicherungen.
+
+**Ein Erscheinungsbild für alles.** Das Design wird einmal gewählt und gilt in allen Programmen, die es übernehmen.
+
+## Warum die Programme trotzdem getrennt bleiben
+
+Ein Programm, das drei Fachbereiche in einer Datenbank vermischt, verliert beide Vorteile: Es lässt sich weder einzeln benutzen noch einzeln weiterentwickeln.
+
+Darum bleibt es hier bei der Trennung. Jedes Programm besitzt seine eigenen Daten und öffnet niemals die Datenbank eines anderen. Was zwischen ihnen fliesst, geht über einen schmalen, versionierten Weg: Vorschläge, Zusammenfassungen, Ereignisse — nie Rohdaten. Der Zahlungsimport des BudgetManagers etwa nimmt Ausgaben des FPM als Vorschläge entgegen, die du bestätigst oder ablehnst; er greift nie in dessen Bestand.
+
+Wer nur ein Budget führen will, installiert nur den BudgetManager. Wer alles nutzt, bekommt mit dem LifePlanner ein gemeinsames Dach — ohne dass die Teile darunter zusammenwachsen.
+
+---
+
+## Aufbau
+
+**BudgetManager, FPM und FreizeitManager bleiben vollständig eigenständige Git-Repositories** mit eigener Versionshistorie, eigenen Issues, Tests, Releases und Standalone-Builds.
+
+Der LifePlanner-Core enthält keinen eingecheckten Quellcode dieser Anwendungen. Er verwaltet nur:
 
 - Modulverträge und Datenpfade
 - Starten und Beenden getrennter Modulprozesse
