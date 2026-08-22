@@ -153,14 +153,17 @@ class SettingsStore:
 
     def save(self) -> None:
         with self._lock:
-            self.path.parent.mkdir(parents=True, exist_ok=True)
-            tmp = self.path.with_suffix(self.path.suffix + ".tmp")
-            payload = json.dumps(self._data, ensure_ascii=False, indent=2, sort_keys=True)
-            with tmp.open("w", encoding="utf-8", newline="\n") as handle:
-                handle.write(payload)
-                handle.flush()
-                os.fsync(handle.fileno())
-            os.replace(tmp, self.path)
+            from .atomic_write import atomar_schreiben
+
+            # Seit Loop 27 der gemeinsame Helfer. Er traegt den fsync auf das
+            # Verzeichnis nach - ohne den ueberlebt der Inhalt einen
+            # Stromausfall, aber nicht der Eintrag, der auf ihn zeigt - und
+            # gibt der Zwischendatei die Prozessnummer, damit zwei Instanzen
+            # sich nicht dieselbe teilen.
+            atomar_schreiben(
+                self.path,
+                json.dumps(self._data, ensure_ascii=False, indent=2, sort_keys=True),
+            )
 
     def get(self, key: str, default: Any = None) -> Any:
         with self._lock:
