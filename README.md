@@ -1,4 +1,4 @@
-# LifePlanner 0.5.14 – Multi-Repository-Plattform mit GitHub-Modulinstaller
+# LifePlanner 0.5.15 – Multi-Repository-Plattform mit GitHub-Modulinstaller
 
 LifePlanner ist der modulare Desktop-Host. **BudgetManager und FPM bleiben vollständig eigenständige Git-Repositories** mit eigener Versionshistorie, eigenen Issues, Tests, Releases und Standalone-Builds.
 
@@ -86,28 +86,39 @@ LIFEPLANNER_FPM_SOURCE
 
 ## Versionierung
 
-`dependencies/modules.lock.json` definiert die für einen LifePlanner-Release erwarteten Modulversionen und Buildpfade. Änderungen am BudgetManager oder FPM werden **im jeweiligen Modulrepository** committet und veröffentlicht. Erst danach wird im LifePlanner-Repository die gewünschte Modulversion beziehungsweise der Git-Ref aktualisiert.
+`dependencies/modules.lock.json` definiert die für einen LifePlanner-Release erwarteten Modulversionen und Buildpfade. Änderungen an einem Modul werden **im jeweiligen Modulrepository** committet und veröffentlicht. Erst danach wird im LifePlanner-Repository die gewünschte Modulversion beziehungsweise der Git-Ref aktualisiert.
+
+Die Lockdatei ist dafür die **einzige** Stelle. `.github/workflows/release.yml` trägt keine Modulversion mehr: Der Release-Workflow ruft im Schritt *Resolve release metadata*
+
+```bash
+python tools/module_sources.py --github-env >> "$GITHUB_ENV"
+```
+
+auf und checkt die Module anschließend mit `env.LOCK_<MODUL>_REF` aus. Ein Modulwechsel ist damit eine Änderung an einer JSON-Datei — nicht an einer Workflow-Datei, für die der Release-Token das Recht `workflows` bräuchte.
 
 Ein LifePlanner-Commit enthält daher keine Kopie eines Modulcommits. Die Releasepipeline erzeugt zusätzlich `module-source-provenance.json` mit den tatsächlich verwendeten Git-Commit-Hashes und Tags.
 
 ## GitHub-Actions-Konfiguration
 
-Die Windows-Pipeline checkt drei Repositories getrennt aus. Standardmäßig erwartet sie:
+Die Windows-Pipeline checkt die Modulrepositories getrennt aus. Standardmäßig erwartet sie:
 
 ```text
 sloogy/Livemanager
 sloogy/Budgetmanager
 sloogy/FPM
+sloogy/Kontaktmanager
 ```
 
-Abweichende Namen werden als Repository-Variablen gesetzt:
+Die Standardwerte kommen aus `dependencies/modules.lock.json`. Wer für einen
+Lauf davon abweichen will — etwa um einen Modulzweig zu testen —, setzt
+Repository-Variablen; sie schlagen den Lockwert:
 
 ```text
-BUDGETMANAGER_REPOSITORY = sloogy/Budgetmanager
-FPM_REPOSITORY           = sloogy/FPM
-BUDGETMANAGER_REF        = v2.2.63
-FPM_REF                  = v1.0.3
+BUDGETMANAGER_REPOSITORY   FPM_REPOSITORY   FREIZEITMANAGER_REPOSITORY
+BUDGETMANAGER_REF          FPM_REF          FREIZEITMANAGER_REF
 ```
+
+Sind sie nicht gesetzt, gilt die Lockdatei.
 
 Für den zentralen Build aus privaten Modulrepositories wird ein Fine-grained PAT als Secret benötigt:
 
@@ -115,7 +126,7 @@ Für den zentralen Build aus privaten Modulrepositories wird ein Fine-grained PA
 LIFEPLANNER_MODULES_TOKEN
 ```
 
-Der Token benötigt nur Leserechte auf BudgetManager und FPM. Der später an Endbenutzer verteilte Online-Installer sollte dagegen öffentliche Modul-Releases abfragen; er enthält keinen GitHub-Zugriffstoken.
+Der Token benötigt nur Leserechte auf die in der Lockdatei genannten Modulrepositories. Der später an Endbenutzer verteilte Online-Installer sollte dagegen öffentliche Modul-Releases abfragen; er enthält keinen GitHub-Zugriffstoken.
 
 Signierte spätere Releases verwenden:
 
@@ -126,14 +137,14 @@ LIFEPLANNER_UPDATE_PUBLIC_KEY_B64
 
 ## Windows-Release
 
-Ein Tag wie `lifeplanner-v0.5.14` baut aus den drei getrennten Checkouts:
+Ein Tag wie `lifeplanner-v0.5.15` baut aus den drei getrennten Checkouts:
 
-- `LifePlanner_0.5.14_Windows_Portable.zip`
-- `LifePlanner_Core_0.5.14_Windows_x86_64.lpupdate`
+- `LifePlanner_0.5.15_Windows_Portable.zip`
+- `LifePlanner_Core_0.5.15_Windows_x86_64.lpupdate`
 - `budgetmanager_2.2.63_Windows_x86_64.lpmodule`
 - `fpm_1.0.3_Windows_x86_64.lpmodule`
 - `freizeitmanager_0.1.1_Windows_x86_64.lpmodule`
-- `LifePlanner_0.5.14_Windows_Setup.exe`
+- `LifePlanner_0.5.15_Windows_Setup.exe`
 - `lifeplanner-latest.json`
 - `module-source-provenance.json`
 
@@ -141,7 +152,7 @@ Der bewusste erste Release wird mit `--allow-unsigned` gebaut. Dieser Schalter m
 
 Der Windows-Setup wird mitveröffentlicht. Er ist in diesem Release ebenfalls unsigniert, weshalb Windows SmartScreen beim Start warnt. Sein automatischer GitHub-Bootstrap akzeptiert aus Sicherheitsgründen weiterhin nur signierte Remote-Pakete; die einzelnen unsignierten `.lpmodule` lassen sich stattdessen lokal mit manueller Vertrauensbestätigung installieren. Das Portable-Paket bleibt die Alternative ohne Installation.
 
-**Für Windows-Endnutzer sind nur `LifePlanner_0.5.14_Windows_Setup.exe` und `LifePlanner_0.5.14_Windows_Portable.zip` zum direkten Start gedacht.** Das Portable-ZIP muss vollständig entpackt werden. `LifePlanner_Core_*.lpupdate` ist ausschließlich ein Maschinenpaket für den zentralen Updater und darf nicht manuell geöffnet oder gestartet werden. Ein kleiner `LifePlanner.exe`-Launcher erkennt unvollständig entpackte Portable-Pakete und zeigt statt eines Python-DLL-Fehlers eine verständliche Meldung.
+**Für Windows-Endnutzer sind nur `LifePlanner_0.5.15_Windows_Setup.exe` und `LifePlanner_0.5.15_Windows_Portable.zip` zum direkten Start gedacht.** Das Portable-ZIP muss vollständig entpackt werden. `LifePlanner_Core_*.lpupdate` ist ausschließlich ein Maschinenpaket für den zentralen Updater und darf nicht manuell geöffnet oder gestartet werden. Ein kleiner `LifePlanner.exe`-Launcher erkennt unvollständig entpackte Portable-Pakete und zeigt statt eines Python-DLL-Fehlers eine verständliche Meldung.
 
 Der Windows-Installer enthält **keine eingebetteten BudgetManager- oder FPM-Binärdateien mehr**. Beim Öffnen der Seite „Programme auswählen“ fragt er die konfigurierten GitHub-Repositories ab, zeigt verfügbare `.lpmodule`-Releases an und lädt nur die ausgewählten Programme herunter. Mindestens ein Programm ist Pflicht.
 

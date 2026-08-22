@@ -26,13 +26,18 @@ def test_windows_release_pipeline_stages_all_three_apps_from_separate_repos():
     assert 'python-version: "3.12"' in workflow
     assert "Checkout BudgetManager repository" in workflow
     assert "Checkout FPM repository" in workflow
-    # Der Workflow muss genau die Refs ziehen, die in der Lockdatei stehen.
-    # Frueher stand hier ein fester Tag - der blieb fuenf Modulstaende lang
-    # stehen, waehrend der Host laengst neuere Module haette bauen sollen.
+    # Der Workflow darf kein Modul-Ref mehr selbst tragen. Frueher stand hier
+    # ein fester Tag; nachgezogen wurde er per Regex in die Workflow-Datei -
+    # wofuer der Release-Token das Recht "workflows" braucht, das er nicht hat.
+    # Jetzt liest der Workflow die Refs zur Laufzeit aus der Lockdatei.
     lock = json.loads((ROOT / "dependencies/modules.lock.json").read_text(encoding="utf-8"))
+    assert "tools/module_sources.py --github-env" in workflow
     for modul in lock["modules"]:
-        assert f"'{modul['default_ref']}'" in workflow, (
-            f"{modul['id']}: Workflow zieht nicht {modul['default_ref']}"
+        assert f"'{modul['default_ref']}'" not in workflow, (
+            f"{modul['id']}: Ref steht wieder fest im Workflow"
+        )
+        assert f"env.LOCK_{modul['ref_variable']}" in workflow, (
+            f"{modul['id']}: Workflow liest das Ref nicht aus der Lockdatei"
         )
     # Der Erst-Release ging bewusst unsigniert heraus. Seither prueft der
     # Updater fail-closed: ein Release ohne Signatur waere fuer jede

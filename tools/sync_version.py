@@ -4,10 +4,9 @@
 Quelle: ``lifeplanner_core.APP_VERSION``.
 
 Warum es diese Datei gibt: Die Version stand bisher an sechs Stellen und musste
-bei jedem Release von Hand nachgezogen werden - in der Workflow-Datei allein
-neunmal. Vergass man eine, schlug der Paketest fehl oder, schlimmer, der
-Workflow suchte nach einer Datei, die der Build unter anderem Namen abgelegt
-hatte.
+bei jedem Release von Hand nachgezogen werden. Vergass man eine, schlug der
+Paketest fehl oder, schlimmer, der Workflow suchte nach einer Datei, die der
+Build unter anderem Namen abgelegt hatte.
 
 Die Versionshistorie in ``CHANGELOG.md`` wird bewusst nicht angefasst.
 """
@@ -30,8 +29,13 @@ VERSION_BEARING = (
     "installer/LifePlanner.iss",
     "dependencies/modules.lock.json",
     "dependencies/installer-module-sources.example.json",
-    ".github/workflows/release.yml",
 )
+# .github/workflows/release.yml steht bewusst nicht mehr dabei. Zwei Gruende:
+# Der Release-Token darf Workflow-Dateien nur mit dem Recht "workflows"
+# schreiben - der Prepare-Lauf scheiterte daran. Und die Ersetzung war
+# gefaehrlich: Die Reihe des Hosts traf auch fremde Versionen. Bei einem
+# LifePlanner 1.1.x haette sie das FPM-Ref v1.1.0 mitgezogen. Der Workflow
+# traegt jetzt keine Version mehr; tests/test_module_sources.py haelt das fest.
 
 
 def _pattern(series: str) -> re.Pattern[str]:

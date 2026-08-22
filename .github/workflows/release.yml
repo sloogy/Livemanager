@@ -42,28 +42,31 @@ jobs:
           $version = (python -c "from lifeplanner_core import APP_VERSION; print(APP_VERSION)").Trim()
           "LIFEPLANNER_VERSION=$version" >> $env:GITHUB_ENV
           "LIFEPLANNER_RELEASE_TAG=lifeplanner-v$version" >> $env:GITHUB_ENV
+          # Modulrepositories und -refs stehen nur in modules.lock.json.
+          python tools/module_sources.py --github-env >> $env:GITHUB_ENV
+          if ($LASTEXITCODE -ne 0) { throw "Modul-Lockdatei nicht lesbar" }
 
       - name: Checkout BudgetManager repository
         uses: actions/checkout@v4
         with:
-          repository: ${{ vars.BUDGETMANAGER_REPOSITORY || 'sloogy/Budgetmanager' }}
-          ref: ${{ vars.BUDGETMANAGER_REF || 'v2.2.70' }}
+          repository: ${{ vars.BUDGETMANAGER_REPOSITORY || env.LOCK_BUDGETMANAGER_REPOSITORY }}
+          ref: ${{ vars.BUDGETMANAGER_REF || env.LOCK_BUDGETMANAGER_REF }}
           token: ${{ secrets.LIFEPLANNER_MODULES_TOKEN || github.token }}
           path: module-sources/budgetmanager
 
       - name: Checkout FPM repository
         uses: actions/checkout@v4
         with:
-          repository: ${{ vars.FPM_REPOSITORY || 'sloogy/FPM' }}
-          ref: ${{ vars.FPM_REF || 'v1.1.0' }}
+          repository: ${{ vars.FPM_REPOSITORY || env.LOCK_FPM_REPOSITORY }}
+          ref: ${{ vars.FPM_REF || env.LOCK_FPM_REF }}
           token: ${{ secrets.LIFEPLANNER_MODULES_TOKEN || github.token }}
           path: module-sources/fpm
 
       - name: Checkout Kontaktmanager repository
         uses: actions/checkout@v4
         with:
-          repository: ${{ vars.FREIZEITMANAGER_REPOSITORY || 'sloogy/Kontaktmanager' }}
-          ref: ${{ vars.FREIZEITMANAGER_REF || 'v0.1.8' }}
+          repository: ${{ vars.FREIZEITMANAGER_REPOSITORY || env.LOCK_FREIZEITMANAGER_REPOSITORY }}
+          ref: ${{ vars.FREIZEITMANAGER_REF || env.LOCK_FREIZEITMANAGER_REF }}
           token: ${{ secrets.LIFEPLANNER_MODULES_TOKEN || github.token }}
           path: module-sources/freizeitmanager
 
@@ -91,8 +94,8 @@ jobs:
         working-directory: lifeplanner
         env:
           LIFEPLANNER_RELEASE_BASE_URL: https://github.com/${{ github.repository }}/releases/download/${{ env.LIFEPLANNER_RELEASE_TAG }}
-          BUDGETMANAGER_REPOSITORY: ${{ vars.BUDGETMANAGER_REPOSITORY || 'sloogy/Budgetmanager' }}
-          FPM_REPOSITORY: ${{ vars.FPM_REPOSITORY || 'sloogy/FPM' }}
+          BUDGETMANAGER_REPOSITORY: ${{ vars.BUDGETMANAGER_REPOSITORY || env.LOCK_BUDGETMANAGER_REPOSITORY }}
+          FPM_REPOSITORY: ${{ vars.FPM_REPOSITORY || env.LOCK_FPM_REPOSITORY }}
           LIFEPLANNER_UPDATE_PRIVATE_KEY_B64: ${{ secrets.LIFEPLANNER_UPDATE_PRIVATE_KEY_B64 }}
           LIFEPLANNER_UPDATE_PUBLIC_KEY_B64: ${{ vars.LIFEPLANNER_UPDATE_PUBLIC_KEY_B64 }}
         run: >-
@@ -165,31 +168,34 @@ jobs:
       - name: Resolve release metadata
         working-directory: lifeplanner
         run: |
+          set -euo pipefail
           version="$(python -c 'from lifeplanner_core import APP_VERSION; print(APP_VERSION)')"
           echo "LIFEPLANNER_VERSION=$version" >> "$GITHUB_ENV"
           echo "LIFEPLANNER_RELEASE_TAG=lifeplanner-v$version" >> "$GITHUB_ENV"
+          # Modulrepositories und -refs stehen nur in modules.lock.json.
+          python tools/module_sources.py --github-env >> "$GITHUB_ENV"
 
       - name: Checkout BudgetManager repository
         uses: actions/checkout@v4
         with:
-          repository: ${{ vars.BUDGETMANAGER_REPOSITORY || 'sloogy/Budgetmanager' }}
-          ref: ${{ vars.BUDGETMANAGER_REF || 'v2.2.70' }}
+          repository: ${{ vars.BUDGETMANAGER_REPOSITORY || env.LOCK_BUDGETMANAGER_REPOSITORY }}
+          ref: ${{ vars.BUDGETMANAGER_REF || env.LOCK_BUDGETMANAGER_REF }}
           token: ${{ secrets.LIFEPLANNER_MODULES_TOKEN || github.token }}
           path: module-sources/budgetmanager
 
       - name: Checkout FPM repository
         uses: actions/checkout@v4
         with:
-          repository: ${{ vars.FPM_REPOSITORY || 'sloogy/FPM' }}
-          ref: ${{ vars.FPM_REF || 'v1.1.0' }}
+          repository: ${{ vars.FPM_REPOSITORY || env.LOCK_FPM_REPOSITORY }}
+          ref: ${{ vars.FPM_REF || env.LOCK_FPM_REF }}
           token: ${{ secrets.LIFEPLANNER_MODULES_TOKEN || github.token }}
           path: module-sources/fpm
 
       - name: Checkout Kontaktmanager repository
         uses: actions/checkout@v4
         with:
-          repository: ${{ vars.FREIZEITMANAGER_REPOSITORY || 'sloogy/Kontaktmanager' }}
-          ref: ${{ vars.FREIZEITMANAGER_REF || 'v0.1.8' }}
+          repository: ${{ vars.FREIZEITMANAGER_REPOSITORY || env.LOCK_FREIZEITMANAGER_REPOSITORY }}
+          ref: ${{ vars.FREIZEITMANAGER_REF || env.LOCK_FREIZEITMANAGER_REF }}
           token: ${{ secrets.LIFEPLANNER_MODULES_TOKEN || github.token }}
           path: module-sources/freizeitmanager
 

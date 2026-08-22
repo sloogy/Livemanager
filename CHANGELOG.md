@@ -1,5 +1,36 @@
 # Changelog
 
+## 0.5.15 – Sicherheit und Stabilität
+
+### Stabilität
+
+- **Die Modulversionen standen an zwei Stellen und wurden an der falschen
+  nachgezogen.** Neben `dependencies/modules.lock.json` trug
+  `.github/workflows/release.yml` sie als feste Rückfallwerte; `sync_version.py`
+  schrieb sie dort per Regex hinein. Das scheiterte am Release-Token, der
+  Workflow-Dateien nur mit dem Recht `workflows` schreiben darf — dieselbe
+  Sperre, an der schon der BudgetManager viermal hängengeblieben ist. Der
+  Workflow liest die Refs jetzt zur Laufzeit aus der Lockdatei
+  (`tools/module_sources.py --github-env`) und checkt mit
+  `env.LOCK_<MODUL>_REF` aus. Ein Modulwechsel ist damit eine Änderung an
+  einer JSON-Datei.
+- **Die Modulstände waren fünf Fassungen alt.** Die Lockdatei zeigte auf
+  BudgetManager 2.2.70, FPM 1.1.0 und FreizeitManager 0.1.8; veröffentlicht
+  sind 2.2.73, 1.2.5 und 0.1.13. Jetzt nachgezogen.
+- **Der Linux-Metadatenschritt lief ohne `set -euo pipefail`.** Wäre die
+  Auflösung der Modulquellen fehlgeschlagen, hätte `actions/checkout` ein
+  leeres Ref bekommen und stillschweigend den Standardzweig gezogen.
+
+### Sicherheit
+
+- **Ein Zeilenumbruch in der Lockdatei hätte eine zweite Umgebungsvariable
+  definiert.** Die Werte gehen nach `$GITHUB_ENV`; `github_env_lines()` weist
+  Werte mit `\r` oder `\n` jetzt ab, statt sie durchzureichen.
+- **Die Versionsersetzung traf fremde Versionen.** `sync_version.py` ersetzte
+  alles der Reihe des Hosts — bei einem LifePlanner 1.1.x hätte das das
+  FPM-Ref `v1.1.0` mitgezogen. Die Workflow-Datei trägt jetzt gar keine
+  Version mehr, und ein Test hält das fest.
+
 ## 0.5.14 – Sicherheit und Stabilität
 
 ### Stabilität

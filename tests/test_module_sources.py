@@ -1,10 +1,16 @@
 import json
 import re
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
 
-from tools.module_sources import ModuleSourceError, load_lock, validate_module_source
+from tools.module_sources import (
+    ModuleSourceError,
+    github_env_lines,
+    load_lock,
+    validate_module_source,
+)
 
 
 def _make_source(tmp_path: Path, *, module_id: str, version: str, spec_name: str) -> Path:
@@ -72,10 +78,47 @@ def test_build_tools_and_workflow_cover_every_locked_module():
 
     for spec in specs:
         assert spec.source_environment in workflow, f"{spec.module_id}: Quelle fehlt im Workflow"
-        assert spec.default_repository in workflow, f"{spec.module_id}: Repository fehlt im Workflow"
+        # Repository und Ref stehen nur in der Lockdatei; der Workflow verweist
+        # darauf. Ein neues Modul faellt trotzdem auf, weil sein Verweis fehlt.
+        assert f"env.LOCK_{spec.repository_variable}" in workflow, (
+            f"{spec.module_id}: Repository fehlt im Workflow"
+        )
+        assert f"env.LOCK_{spec.ref_variable}" in workflow, (
+            f"{spec.module_id}: Ref fehlt im Workflow"
+        )
         assert f"--{spec.module_id}-source" in workflow, f"{spec.module_id}: Buildaufruf fehlt"
 
     for name in ("tools/build_release.py", "tools/build_linux_release.py"):
         text = (root / name).read_text(encoding="utf-8")
         for spec in specs:
             assert spec.module_id not in text, f"{name} verdrahtet {spec.module_id} fest"
+
+
+def test_workflow_carries_no_version_literal():
+    """Die Workflow-Datei traegt keine Version - weder Host noch Modul.
+
+    Sie stand frueher in ``sync_version.py`` unter den versionstragenden
+    Dateien. Zwei Dinge gingen daran kaputt: Der Release-Token darf
+    Workflow-Dateien nur mit dem Recht "workflows" schreiben, und die Ersetzung
+    lief ueber die Versionsreihe des Hosts - ein LifePlanner 1.1.x haette das
+    FPM-Ref ``v1.1.0`` mitgezogen.
+    """
+    root = Path(__file__).resolve().parents[1]
+    workflow = (root / ".github/workflows/release.yml").read_text(encoding="utf-8")
+    treffer = re.findall(r"(?<![\w.])v?\d+\.\d+\.\d+(?![\w.])", workflow)
+    assert not treffer, f"Version steht wieder fest im Workflow: {treffer}"
+
+    sync = (root / "tools/sync_version.py").read_text(encoding="utf-8")
+    assert ".github/workflows/release.yml" not in sync.split("VERSION_BEARING")[1].split(")")[0]
+
+
+def test_github_env_lines_reject_line_breaks():
+    """Ein Zeilenumbruch im Lockwert wuerde eine zweite Variable definieren."""
+    spec = load_lock()[0]
+    kaputt = replace(spec, default_ref="v1.0.0\nGITHUB_TOKEN=geklaut")
+    with pytest.raises(ModuleSourceError, match="Zeilenumbruch"):
+        github_env_lines((kaputt,))
+
+    zeilen = github_env_lines()
+    assert all(zeile.count("=") >= 1 and "\n" not in zeile for zeile in zeilen)
+    assert f"LOCK_{spec.ref_variable}={spec.default_ref}" in zeilen

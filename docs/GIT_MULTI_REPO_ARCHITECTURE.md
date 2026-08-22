@@ -51,6 +51,20 @@ Git-Submodule können lokal verwendet werden, sind aber nicht Bestandteil des ve
 
 Der Build bricht ab, wenn `module.json` nicht zur gelockten ID oder Version passt.
 
+Die Lockdatei ist die einzige Stelle, an der Modulversionen stehen. Der
+Release-Workflow liest sie zur Laufzeit über
+`python tools/module_sources.py --github-env` und checkt die Module mit
+`env.LOCK_<MODUL>_REF` aus. Repository-Variablen (`<MODUL>_REF`,
+`<MODUL>_REPOSITORY`) schlagen den Lockwert, wenn sie gesetzt sind.
+
+Warum das so gebaut ist: Die Refs standen früher zusätzlich als feste
+Rückfallwerte in `.github/workflows/release.yml` und wurden dort per Regex
+nachgezogen. Das scheiterte am Release-Token, der Workflow-Dateien nur mit dem
+Recht `workflows` schreiben darf — und es war unsicher, weil die Ersetzung über
+die Versionsreihe des Hosts lief: Ein LifePlanner 1.1.x hätte das FPM-Ref
+`v1.1.0` mitgezogen. `tests/test_module_sources.py` hält fest, dass in der
+Workflow-Datei keine Version mehr steht.
+
 ## Entwicklungsmodus
 
 `tools/prepare_dev_modules.py` erzeugt unter `modules/<id>` nur lokale Einbindungen. Dieser Ordner ist in `.gitignore` ausgeschlossen. Die bevorzugte Reihenfolge zur Quellenauflösung ist:
@@ -62,10 +76,11 @@ Der Build bricht ab, wenn `module.json` nicht zur gelockten ID oder Version pass
 
 ## Releaseablauf
 
-1. BudgetManager und FPM separat testen und taggen.
-2. Im LifePlanner-Repository Lockdatei beziehungsweise Workflow-Refs aktualisieren.
+1. Jedes Modul separat testen, veröffentlichen und taggen.
+2. Im LifePlanner-Repository nur `dependencies/modules.lock.json` aktualisieren —
+   die Workflow-Datei wird dabei nicht angefasst.
 3. LifePlanner-Tag erstellen.
-4. GitHub Actions checkt alle drei Repositories getrennt aus.
+4. GitHub Actions checkt alle Modulrepositories getrennt aus.
 5. Jede Modulquelle wird gegen `module.json` und Lockdatei geprüft.
 6. Module werden in ihren eigenen Arbeitsverzeichnissen gebaut.
 7. Nur die fertigen Binärartefakte werden in Installer, Portable-Paket und `.lpmodule` übernommen.

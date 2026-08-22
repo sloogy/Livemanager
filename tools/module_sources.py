@@ -196,3 +196,69 @@ def resolve_module_sources(
         )
         raise ModuleSourceError("\n".join(errors) + guidance)
     return resolved
+
+
+# --- Modulrefs fuer den Release-Workflow -------------------------------------
+#
+# Warum das hier steht: Die Modulversionen standen doppelt - in der Lockdatei
+# und als feste Rueckfallwerte in .github/workflows/release.yml. Nachgezogen
+# wurden sie per Regex, und genau das darf der Release-Token nicht: Wer eine
+# Workflow-Datei schreibt, braucht das Recht "workflows". Der Prepare-Lauf
+# scheiterte daran. Jetzt liest der Workflow die Refs zur Laufzeit von hier.
+
+_ENV_VALUE_FORBIDDEN = set("\r\n")
+
+
+def _check_env_value(name: str, value: str) -> str:
+    """Wehrt Zeileneinschuebe in GITHUB_ENV ab.
+
+    Ein Zeilenumbruch im Wert wuerde eine zweite Variable definieren - die
+    Lockdatei ist versioniert, aber sie ist eine Datei, und eine Datei, aus der
+    heraus sich Umgebungsvariablen setzen lassen, ist ein Einfallstor.
+    """
+    if not value:
+        raise ModuleSourceError(f"{name} ist leer.")
+    if _ENV_VALUE_FORBIDDEN & set(value):
+        raise ModuleSourceError(f"{name} enthaelt einen Zeilenumbruch: {value!r}")
+    return value
+
+
+def github_env_lines(specs: tuple[ModuleSourceSpec, ...] | None = None) -> list[str]:
+    """``LOCK_<VARIABLE>=<wert>`` je Modul, Repository und Ref.
+
+    Das Praefix haelt die Werte aus der Lockdatei von den gleichnamigen
+    Repository-Variablen getrennt: ``vars.BUDGETMANAGER_REF`` schlaegt weiterhin
+    den Lockwert, aber nur, wenn sie ausdruecklich gesetzt ist.
+    """
+    lines: list[str] = []
+    for spec in specs if specs is not None else load_lock():
+        for variable, value in (
+            (spec.repository_variable, spec.default_repository),
+            (spec.ref_variable, spec.default_ref),
+        ):
+            if not variable:
+                raise ModuleSourceError(f"{spec.module_id}: Variablenname fehlt in der Lockdatei.")
+            _check_env_value(f"{spec.module_id}.{variable}", value)
+            lines.append(f"LOCK_{variable}={value}")
+    return lines
+
+
+def main(argv: list[str] | None = None) -> int:
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Modulquellen aus der Lockdatei melden.")
+    parser.add_argument(
+        "--github-env",
+        action="store_true",
+        help="LOCK_*-Zeilen fuer $GITHUB_ENV ausgeben",
+    )
+    args = parser.parse_args(argv)
+    if not args.github_env:
+        parser.error("--github-env erwartet")
+    for line in github_env_lines():
+        print(line)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

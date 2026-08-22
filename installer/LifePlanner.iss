@@ -1,5 +1,5 @@
 #define MyAppName "LifePlanner"
-#define MyAppVersion "0.5.14"
+#define MyAppVersion "0.5.15"
 #define MyAppExeName "LifePlanner.exe"
 
 [Setup]
@@ -9,7 +9,7 @@ AppVersion={#MyAppVersion}
 DefaultDirName={localappdata}\Programs\LifePlanner
 DefaultGroupName=LifePlanner
 OutputDir=..\release
-OutputBaseFilename=LifePlanner_0.5.14_Windows_Setup
+OutputBaseFilename=LifePlanner_0.5.15_Windows_Setup
 Compression=lzma2
 SolidCompression=yes
 ArchitecturesAllowed=x64compatible
