@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 import signal
 import subprocess
@@ -16,6 +17,8 @@ from .paths import bridge_dir, logs_dir, module_data_dir, profile_dir
 from .settings import SettingsStore
 from .theme import THEME_ENV_FILE, THEME_ENV_NAME, ThemeCatalog, publish_theme
 from .updater.io import ensure_executable
+
+_log = logging.getLogger(__name__)
 
 
 # Ab dieser Groesse wird das Log eines Moduls beiseitegelegt, und so viele
@@ -242,13 +245,23 @@ class ModuleProcessManager:
                 {"module_id": manifest.module_id, "version": manifest.version, **payload},
             )
             FileEventBus(profile_id).publish(event)
-        except Exception:
-            # Lifecycle-Telemetrie ist lokal und darf den Modulstart nie blockieren.
-            pass
+        except Exception as fehler:
+            # Lifecycle-Telemetrie ist lokal und darf den Modulstart nie
+            # blockieren - aber schweigen darf sie nicht. Blieb sie stumm,
+            # fehlten die Ereignisse spurlos, und niemand konnte sagen warum.
+            _log.warning(
+                "Lebenszyklus-Ereignis '%s' fuer %s nicht veroeffentlicht: %s",
+                event_type, manifest.module_id, fehler,
+            )
 
     @staticmethod
     def _close_log(running: RunningModule) -> None:
         try:
             running.log_handle.close()
-        except Exception:
-            pass
+        except OSError as fehler:
+            # Nicht weiterreichen: das Modul ist ohnehin beendet. Aber ein
+            # Dateideskriptor, der sich nicht schliessen laesst, bleibt offen.
+            _log.warning(
+                "Log von %s liess sich nicht schliessen: %s",
+                running.manifest.module_id, fehler,
+            )
