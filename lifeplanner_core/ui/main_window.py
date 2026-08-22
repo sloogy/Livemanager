@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
     QApplication,
     QFrame,
     QGridLayout,
+    QGroupBox,
     QHBoxLayout,
     QLabel,
     QListWidget,
@@ -25,9 +26,11 @@ from PySide6.QtWidgets import (
 
 from ..backup_service import BackupError, create_profile_backup
 from ..bridge import summarize_fpm_outbox
+from ..defensive_log import uebersprungen
 from ..diagnostics import write_diagnostics
 from ..i18n import t
 from ..manifest import ModuleManifest
+from ..notices import sammle_meldungen
 from ..paths import bridge_dir, data_root, module_data_dir
 from ..plugin_loader import PluginLoadResult
 from ..process_manager import ModuleLaunchError, ModuleProcessManager
@@ -39,6 +42,10 @@ from .module_manager_page import ModuleManagerPage
 from .update_page import UpdatePage
 
 logger = logging.getLogger(__name__)
+
+# Mehr Zeilen liest niemand, und die Modulkacheln sollen sichtbar
+# bleiben. Was nicht passt, zaehlt die Zeile darunter.
+MELDUNGEN_SICHTBAR = 6
 
 
 class ModuleCard(QFrame):
@@ -176,6 +183,7 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout(page)
         layout.setContentsMargins(28, 24, 28, 24)
         layout.addLayout(self._header(t("haupt.start_titel"), t("haupt.start_einleitung", profil=self.profile_id)))
+        layout.addWidget(self._meldungsbereich())
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         content = QWidget()
@@ -191,6 +199,73 @@ class MainWindow(QMainWindow):
         scroll.setWidget(content)
         layout.addWidget(scroll, 1)
         return page
+
+    def _meldungsbereich(self) -> QWidget:
+        """Was die Module gerade melden - ueber den Modulkacheln.
+
+        Ueber ihnen, weil eine ueberzogene Kategorie wichtiger ist als die
+        Frage, ob ein Modul laeuft. Wer den Host oeffnet, soll das zuerst
+        sehen.
+        """
+        rahmen = QGroupBox(t("haupt.meldungen_titel"))
+        self._meldungs_layout = QVBoxLayout(rahmen)
+        self._meldungs_layout.setSpacing(6)
+        self._refresh_meldungen()
+        return rahmen
+
+    def _refresh_meldungen(self) -> None:
+        layout = getattr(self, "_meldungs_layout", None)
+        if layout is None:
+            return
+        while layout.count():
+            eintrag = layout.takeAt(0)
+            widget = eintrag.widget()
+            if widget is not None:
+                widget.deleteLater()
+
+        try:
+            befund = sammle_meldungen(self.profile_id)
+        except OSError as fehler:
+            uebersprungen("Meldungen einsammeln", fehler)
+            layout.addWidget(QLabel(t("haupt.meldungen_nicht_gelesen")))
+            return
+
+        if not befund.meldungen:
+            leer = QLabel(t("haupt.meldungen_leer"))
+            leer.setWordWrap(True)
+            leer.setObjectName("notice")
+            layout.addWidget(leer)
+            return
+
+        for meldung in befund.meldungen[:MELDUNGEN_SICHTBAR]:
+            layout.addWidget(self._meldungszeile(meldung))
+
+        rest = len(befund.meldungen) - MELDUNGEN_SICHTBAR + befund.verworfene
+        if rest > 0:
+            weitere = QLabel(t("haupt.meldungen_weitere", anzahl=rest))
+            weitere.setObjectName("notice")
+            layout.addWidget(weitere)
+        if befund.ungueltige_zeilen:
+            # Sichtbar, nicht still: Eine kaputte Meldungsdatei heisst, dass
+            # ein Modul etwas zu sagen hat, das hier nicht ankommt.
+            hinweis = QLabel(
+                t("haupt.meldungen_unlesbar", anzahl=befund.ungueltige_zeilen)
+            )
+            hinweis.setObjectName("notice")
+            layout.addWidget(hinweis)
+
+    def _meldungszeile(self, meldung) -> QWidget:
+        punkt = {"kritisch": "\N{LARGE RED CIRCLE}", "warnung": "\N{LARGE ORANGE CIRCLE}"}.get(
+            meldung.dringlichkeit, "\N{LARGE BLUE CIRCLE}"
+        )
+        text = f"{punkt} <b>{meldung.ueberschrift}</b>"
+        if meldung.zusatz:
+            text += f" \N{MIDDLE DOT} {meldung.zusatz}"
+        text += f" \N{MIDDLE DOT} <i>{meldung.modul}</i>"
+        zeile = QLabel(text)
+        zeile.setTextFormat(Qt.TextFormat.RichText)
+        zeile.setWordWrap(True)
+        return zeile
 
     def _integration_page(self) -> QWidget:
         page = QWidget()

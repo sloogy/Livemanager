@@ -2,6 +2,26 @@
 
 ## Unveröffentlicht
 
+### Funktion
+
+- **Das Dashboard zeigt, was die Module melden.** Die Übersichtsseite führte
+  nur die Modulkacheln; was in einem Modul gerade schiefläuft, stand nur dort.
+  Über den Kacheln stehen jetzt die Meldungen aller Module nach
+  `lifeplanner.notice.v1` — nach Dringlichkeit sortiert, mit dem Absender
+  dahinter.
+
+  **Der Host bewertet nichts.** Er sortiert und zeigt an; die Dringlichkeit
+  kommt vom Modul, das die Daten hat. Eine Bewertung hier wäre eine zweite
+  Fachlogik neben der ersten, und die beiden laufen auseinander. Gelesen wird
+  aus allen bekannten Brückenordnern (Loop 31), den aktiven zuletzt.
+
+  Eine unbekannte Dringlichkeitsstufe wird als `info` gezeigt, nicht
+  verworfen: Sie bedeutet ein neueres Modul, keine kaputte Datei — und ein
+  älterer Host darf die Meldung eines neueren Moduls nicht verschlucken,
+  gerade dann nicht, wenn sie wichtig ist. Unlesbare Zeilen werden gezählt und
+  angezeigt, statt still zu verschwinden. Das Format steht in
+  `docs/MELDUNGEN_DASHBOARD.md`.
+
 ### Dokumentation
 
 - **Das README sagt jetzt zuerst, was das Programm tut.** Vorher stand dort
