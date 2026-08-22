@@ -17,6 +17,14 @@
       "asset_pattern": "fpm_(?P<version>[0-9][0-9A-Za-z._-]*)_Windows_x86_64\\.lpmodule",
       "description": "Füller, Tinten, Federn, Papier, Rotation und Sammlungswissen.",
       "requires_host": ">=0.5.14"
+    },
+    {
+      "id": "freizeitmanager",
+      "name": "FreizeitManager",
+      "repository": "sloogy/Kontaktmanager",
+      "asset_pattern": "freizeitmanager_(?P<version>[0-9][0-9A-Za-z._-]*)_Windows_x86_64\\.lpmodule",
+      "description": "Freundschaftspflege, Kontaktrotation, Aktivitäten und Freizeitplanung.",
+      "requires_host": ">=0.5.14"
     }
   ]
 }
