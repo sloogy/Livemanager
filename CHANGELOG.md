@@ -1,6 +1,6 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.5.14 – Sicherheit und Stabilität
 
 ### Stabilität
 

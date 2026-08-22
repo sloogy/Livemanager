@@ -1,6 +1,6 @@
 {
   "schema": "lifeplanner.module-sources.v1",
-  "host_version": "0.5.13",
+  "host_version": "0.5.14",
   "modules": [
     {
       "id": "budgetmanager",
