@@ -15,6 +15,7 @@ concurrency:
 
 jobs:
   prepare:
+    if: "!startsWith(github.event.head_commit.message, '[release-status]')"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -30,9 +31,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          TAG="${GITHUB_REF_NAME#release-trigger/}"
-          VERSION="${TAG#lifeplanner-v}"
+          REQUEST="${GITHUB_REF_NAME#release-trigger/lifeplanner-v}"
+          VERSION="${REQUEST%%-r*}"
+          TAG="lifeplanner-v${VERSION}"
           [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          if [[ "$REQUEST" != "$VERSION" && ! "$REQUEST" =~ ^${VERSION}-r[1-9][0-9]*$ ]]; then
+            echo "Ungültiger Retry-Suffix: ${REQUEST}" >&2
+            exit 1
+          fi
           echo "TAG=$TAG" >> "$GITHUB_ENV"
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
           python - "$VERSION" <<'PY'
@@ -57,8 +63,8 @@ jobs:
           lock = json.loads(lock_path.read_text(encoding='utf-8'))
           wanted = {
               'budgetmanager': ('2.2.72', 'v2.2.72'),
-              'fpm': ('1.2.2', 'v1.2.2'),
-              'freizeitmanager': ('0.1.11', 'v0.1.11'),
+              'fpm': ('1.2.3', 'v1.2.3'),
+              'freizeitmanager': ('0.1.12', 'v0.1.12'),
           }
           for module in lock['modules']:
               if module['id'] in wanted:
@@ -76,11 +82,11 @@ jobs:
               ),
               (
                   r"(repository:\s*\$\{\{ vars\.FPM_REPOSITORY[^\n]*\}\}\s*\n\s*ref:)\s*[^\n]+",
-                  r"\1 'v1.2.2'",
+                  r"\1 'v1.2.3'",
               ),
               (
                   r"(repository:\s*\$\{\{ vars\.FREIZEITMANAGER_REPOSITORY[^\n]*\}\}\s*\n\s*ref:)\s*[^\n]+",
-                  r"\1 'v0.1.11'",
+                  r"\1 'v0.1.12'",
               ),
           )
           for pattern, replacement in replacements:
@@ -94,7 +100,7 @@ jobs:
           python tools/sync_version.py
           python tools/sync_version.py --check
 
-      - name: Modul-Tags müssen bereits unveränderlich existieren
+      - name: Modul-Tags und grüne Full-Releases müssen existieren
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -102,13 +108,20 @@ jobs:
           set -euo pipefail
           for spec in \
             'sloogy/Budgetmanager:v2.2.72' \
-            'sloogy/FPM:v1.2.2' \
-            'sloogy/Kontaktmanager:v0.1.11'
+            'sloogy/FPM:v1.2.3' \
+            'sloogy/Kontaktmanager:v0.1.12'
           do
             repo="${spec%%:*}"
             ref="${spec#*:}"
             gh api "repos/${repo}/git/ref/tags/${ref}" >/dev/null
           done
+
+          gh api 'repos/sloogy/Budgetmanager/contents/.release-status/v2.2.72.ok?ref=release-trigger/v2.2.72-r4' \
+            --jq '.content' | base64 -d | grep -Fx 'status=success'
+          gh api 'repos/sloogy/FPM/contents/.release-status/v1.2.3.ok?ref=release-trigger/v1.2.3' \
+            --jq '.content' | base64 -d | grep -Fx 'status=success'
+          gh api 'repos/sloogy/Kontaktmanager/contents/.release-status/v0.1.12.ok?ref=release-trigger/v0.1.12' \
+            --jq '.content' | base64 -d | grep -Fx 'status=success'
 
       - name: Release-Validierung ohne Modulbuild
         run: python tools/validate_release.py
@@ -119,6 +132,7 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          rm -f .release-trigger
           git add -A
           if ! git diff --cached --quiet; then
             git commit -m "[release] LifePlanner v${VERSION}"
@@ -137,11 +151,15 @@ jobs:
           git push origin HEAD:main
 
           if git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null 2>&1; then
-            echo "Tag ${TAG} existiert bereits; Abbruch statt Überschreiben." >&2
-            exit 1
+            REMOTE_SHA="$(git ls-remote --tags origin "refs/tags/${TAG}" | awk '{print $1}')"
+            test "$REMOTE_SHA" = "$(git rev-parse HEAD)" || {
+              echo "Tag ${TAG} existiert bereits auf anderem Commit; kein Force-Move." >&2
+              exit 1
+            }
+          else
+            git tag "$TAG" HEAD
+            git push origin "$TAG"
           fi
-          git tag "$TAG" HEAD
-          git push origin "$TAG"
 
       - name: Bestehenden Full-Release starten und Erfolg verlangen
         env:
@@ -160,5 +178,17 @@ jobs:
             sleep 2
           done
           test -n "$RUN_ID" || { echo "Release-Run nicht gefunden" >&2; exit 1; }
+          echo "RUN_ID=$RUN_ID" >> "$GITHUB_ENV"
           echo "Release workflow run: $RUN_ID"
           gh run watch "$RUN_ID" --exit-status
+
+      - name: Grünen Full-Release auf dem Triggerbranch markieren
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .release-status
+          printf 'tag=%s\ncommit=%s\nworkflow_run=%s\nstatus=success\n' \
+            "$TAG" "$(git rev-parse HEAD)" "$RUN_ID" > ".release-status/${TAG}.ok"
+          git add ".release-status/${TAG}.ok"
+          git commit -m "[release-status] ${TAG} full release passed"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
