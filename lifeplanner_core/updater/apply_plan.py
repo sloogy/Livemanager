@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from ..atomic_write import atomar_schreiben
+
 import hashlib
 import json
 import os
@@ -100,10 +102,15 @@ def _replace_path(source: Path, target: Path, *, retries: int = 30) -> None:
     raise ApplyPlanError(f"Datei konnte nicht ersetzt werden: {source} -> {target}: {last_error}")
 
 def _write_json_atomic(path: Path, payload: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temp = path.with_suffix(path.suffix + ".tmp")
-    temp.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    os.replace(temp, path)
+    """Der Name stimmte nur halb.
+
+    Umbenennen ist atomar, aber ohne fsync steht der Inhalt zu diesem
+    Zeitpunkt nur im Cache: Nach einem Stromausfall wurde moeglicherweise
+    eine leere Datei umbenannt. Und die feste .tmp-Endung teilten sich zwei
+    gleichzeitig laufende Prozesse. Seit Loop 29 macht das der gemeinsame
+    Helfer, in allen vier Programmen gleich.
+    """
+    atomar_schreiben(path, json.dumps(payload, ensure_ascii=False, indent=2))
 
 
 def _backup_profiles(update_root: Path, app_root: Path) -> list[str]:

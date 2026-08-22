@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from ..atomic_write import atomar_schreiben
+
 import json
 import os
 import shutil
@@ -233,9 +235,7 @@ class UpdateService:
             "operations": operations,
         }
         path = self.update_root / "plans" / f"plan-{datetime.now().strftime('%Y%m%d-%H%M%S')}-{uuid.uuid4().hex[:8]}.json"
-        temp = path.with_suffix(".tmp")
-        temp.write_text(json.dumps(plan, ensure_ascii=False, indent=2), encoding="utf-8")
-        os.replace(temp, path)
+        atomar_schreiben(path, json.dumps(plan, ensure_ascii=False, indent=2))
         return path
 
     @staticmethod
