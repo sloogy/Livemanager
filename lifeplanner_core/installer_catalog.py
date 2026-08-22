@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import configparser
 import json
-from concurrent.futures import ThreadPoolExecutor
 import os
 import re
+from collections.abc import Iterable
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 from urllib.parse import urlparse
 
 import requests
@@ -16,7 +17,6 @@ from packaging.version import InvalidVersion, Version
 from . import APP_VERSION
 from .github_auth import github_token
 from .repositories import TRUSTED_MODULE_REPOSITORIES, module_asset_pattern
-
 from .updater.io import MAX_COMPONENT_BYTES
 
 _REPOSITORY_RE = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")

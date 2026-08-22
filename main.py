@@ -41,6 +41,7 @@ def main() -> int:
         return 0 if result.modules else 1
     try:
         from PySide6.QtWidgets import QApplication, QMessageBox
+
         from lifeplanner_core.ui.main_window import MainWindow
     except ModuleNotFoundError as exc:
         print(

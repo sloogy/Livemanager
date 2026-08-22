@@ -6,8 +6,7 @@ import shutil
 import time
 import uuid
 from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
-from pathlib import Path
+from datetime import UTC, datetime
 from typing import Any
 
 from .paths import events_dir
@@ -24,7 +23,7 @@ class LifePlannerEvent:
     payload: dict[str, Any]
 
     @classmethod
-    def create(cls, event_type: str, source: str, profile_id: str, payload: dict[str, Any]) -> "LifePlannerEvent":
+    def create(cls, event_type: str, source: str, profile_id: str, payload: dict[str, Any]) -> LifePlannerEvent:
         if not event_type or not source or not isinstance(payload, dict):
             raise ValueError("Event benötigt event_type, source und ein Payload-Objekt")
         return cls(
@@ -32,7 +31,7 @@ class LifePlannerEvent:
             schema="lifeplanner.event.v1",
             event_type=event_type,
             source=source,
-            occurred_at=datetime.now(timezone.utc).isoformat(),
+            occurred_at=datetime.now(UTC).isoformat(),
             profile_id=profile_id,
             payload=payload,
         )

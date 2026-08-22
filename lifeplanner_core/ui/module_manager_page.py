@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from PySide6.QtCore import QCoreApplication, QThread, QTimer, Qt, Signal
+from PySide6.QtCore import QCoreApplication, Qt, QThread, QTimer, Signal
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from ..i18n import t
 from ..installer_catalog import (
     ModuleRelease,
     default_module_sources,
@@ -27,12 +28,10 @@ from ..installer_catalog import (
     query_catalog,
 )
 from ..manifest import ModuleManifest
-from ..module_installer import ModuleInstallerError, ModuleInstallerService, ModulePackageInfo
-from ..i18n import t
+from ..module_installer import ModuleInstallerService, ModulePackageInfo
 from ..paths import data_root, module_data_dir, modules_dir
 from ..plugin_loader import discover_modules
 from ..updater.service import UpdateService
-
 
 _PERMISSION_LABELS = {
     "own_data_read": "eigene Daten lesen",

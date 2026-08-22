@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from ..atomic_write import atomar_schreiben
-
 import hashlib
 import json
 import os
@@ -11,9 +9,12 @@ import sys
 import time
 import traceback
 import zipfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+
+from ..atomic_write import atomar_schreiben
+from ..zeitmarke import dateimarke
 
 PROTECTED_CORE_NAMES = {
     "modules",
@@ -118,7 +119,7 @@ def _backup_profiles(update_root: Path, app_root: Path) -> list[str]:
     profiles = data_root / "profiles"
     if not profiles.is_dir():
         return []
-    backup_dir = update_root / "rollback" / datetime.now().strftime("%Y%m%d-%H%M%S") / "profiles"
+    backup_dir = update_root / "rollback" / dateimarke() / "profiles"
     backup_dir.mkdir(parents=True, exist_ok=True)
     created: list[str] = []
     for profile in sorted(path for path in profiles.iterdir() if path.is_dir()):
@@ -133,7 +134,7 @@ def _backup_profiles(update_root: Path, app_root: Path) -> list[str]:
                     {
                         "schema": "lifeplanner.preupdate-backup.v1",
                         "profile_id": profile.name,
-                        "created_at": datetime.now(timezone.utc).isoformat(),
+                        "created_at": datetime.now(UTC).isoformat(),
                         "app_root": str(app_root),
                     },
                     ensure_ascii=False,
@@ -214,7 +215,7 @@ def apply_plan(plan_path: Path) -> dict[str, Any]:
     wait_for_processes([int(pid) for pid in plan.get("wait_pids", [])])
     profile_backups = _backup_profiles(update_root, app_root) if plan.get("backup_profiles", True) else []
 
-    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    stamp = dateimarke()
     tx_root = app_root / f".__lifeplanner_update_{stamp}_{os.getpid()}"
     incoming_root = tx_root / "incoming"
     old_root = tx_root / "old"
@@ -303,7 +304,7 @@ def apply_plan(plan_path: Path) -> dict[str, Any]:
         result = {
             "schema": "lifeplanner.update-result.v1",
             "success": True,
-            "completed_at": datetime.now(timezone.utc).isoformat(),
+            "completed_at": datetime.now(UTC).isoformat(),
             "components": [
                 {
                     "id": str(op.get("component_id")),
@@ -336,7 +337,7 @@ def apply_plan(plan_path: Path) -> dict[str, Any]:
         result = {
             "schema": "lifeplanner.update-result.v1",
             "success": False,
-            "completed_at": datetime.now(timezone.utc).isoformat(),
+            "completed_at": datetime.now(UTC).isoformat(),
             "error": str(exc),
             "traceback": traceback.format_exc(),
             "rollback_errors": rollback_errors,

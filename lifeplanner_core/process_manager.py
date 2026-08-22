@@ -5,10 +5,9 @@ import os
 import signal
 import subprocess
 import sys
-import time
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Mapping
 
 from . import APP_VERSION
 from .event_bus import FileEventBus, LifePlannerEvent

@@ -17,7 +17,7 @@ import os
 import re
 import sys
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -289,7 +289,7 @@ def theme_record(profile: ThemeProfile, profile_id: str) -> dict[str, Any]:
         "gesetzt_von": "lifeplanner",
         "modul_version": APP_VERSION,
         "profil": profile_id,
-        "geaendert_am": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "geaendert_am": datetime.now(UTC).isoformat(timespec="seconds"),
     }
 
 

@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import json
 import zipfile
-from datetime import datetime, timezone
+from collections.abc import Iterable
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Iterable
 
 from .io import tree_sha256
 from .signing import sign_manifest
@@ -40,7 +40,7 @@ def build_component_package(
         "description": description,
         "platforms": sorted({str(value).strip().lower() for value in platforms if str(value).strip()}),
         "payload_sha256": tree_sha256(payload),
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": datetime.now(UTC).isoformat(),
     }
     metadata_bytes = (json.dumps(metadata, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode("utf-8")
     output.parent.mkdir(parents=True, exist_ok=True)

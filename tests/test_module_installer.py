@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-from cryptography.hazmat.primitives.serialization import Encoding, PrivateFormat, NoEncryption, PublicFormat
+from cryptography.hazmat.primitives.serialization import Encoding, NoEncryption, PrivateFormat, PublicFormat
 
 from lifeplanner_core.module_installer import ModuleInstallerError, ModuleInstallerService
 from lifeplanner_core.plugin_loader import PluginLoadResult
@@ -139,7 +139,6 @@ def test_module_runtime_is_executable_even_if_package_lost_the_bit(
     # Some published .lpmodule packages record the runtime as 0644, which used
     # to make the installed module fail to start with "[Errno 13]".
     import os
-    import sys
 
     monkeypatch.setenv("LIFEPLANNER_DATA_DIR", str(tmp_path / "data"))
     monkeypatch.setenv("LIFEPLANNER_APP_DIR", str(tmp_path / "app"))

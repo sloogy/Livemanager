@@ -6,7 +6,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from module_sources import ModuleSourceError, ROOT, resolve_module_sources
+from module_sources import ROOT, ModuleSourceError, resolve_module_sources
 
 MODULES_DIR = ROOT / "modules"
 
@@ -31,6 +31,7 @@ def _create_windows_junction(target: Path, source: Path) -> bool:
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
+        check=False,  # der Rueckgabewert ist hier die Antwort, kein Fehlerfall
     )
     return completed.returncode == 0
 

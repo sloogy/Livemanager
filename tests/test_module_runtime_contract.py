@@ -1,9 +1,8 @@
 import json
 import os
-from pathlib import Path
 
-from lifeplanner_core.process_manager import ModuleProcessManager
 from lifeplanner_core.manifest import ModuleManifest
+from lifeplanner_core.process_manager import ModuleProcessManager
 
 
 def test_generic_module_data_and_bridge_environment(tmp_path, monkeypatch):

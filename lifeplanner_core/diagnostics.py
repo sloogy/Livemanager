@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import platform
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from . import APP_VERSION
@@ -15,7 +15,7 @@ def build_diagnostics() -> dict:
     result = discover_modules()
     return {
         "schema": "lifeplanner.diagnostics.v1",
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": datetime.now(UTC).isoformat(),
         "lifeplanner_version": APP_VERSION,
         "python": sys.version,
         "platform": platform.platform(),

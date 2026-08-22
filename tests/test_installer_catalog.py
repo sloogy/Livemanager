@@ -168,7 +168,12 @@ def test_bootstrap_installs_selected_signed_module_transactionally(tmp_path: Pat
     from argparse import Namespace
 
     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-    from cryptography.hazmat.primitives.serialization import Encoding, PrivateFormat, NoEncryption, PublicFormat
+    from cryptography.hazmat.primitives.serialization import (
+        Encoding,
+        NoEncryption,
+        PrivateFormat,
+        PublicFormat,
+    )
 
     import lifeplanner_core.installer_bootstrap as bootstrap
     from lifeplanner_core.installer_catalog import ModuleRelease

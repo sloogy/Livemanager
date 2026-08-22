@@ -5,11 +5,12 @@ import json
 import os
 import tempfile
 import zipfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from . import APP_VERSION
 from .paths import backups_dir, profile_dir
+from .zeitmarke import dateimarke
 
 
 class BackupError(RuntimeError):
@@ -27,7 +28,7 @@ def _sha256(path: Path) -> str:
 def create_profile_backup(profile_id: str) -> Path:
     source = profile_dir(profile_id)
     target_dir = backups_dir(profile_id)
-    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    stamp = dateimarke()
     target = target_dir / f"lifeplanner-{profile_id}-{stamp}.zip"
     fd, temp_name = tempfile.mkstemp(prefix=".backup-", suffix=".zip", dir=target_dir)
     os.close(fd)
@@ -45,7 +46,7 @@ def create_profile_backup(profile_id: str) -> Path:
                 "schema": "lifeplanner.backup.v1",
                 "host_version": APP_VERSION,
                 "profile_id": profile_id,
-                "created_at": datetime.now(timezone.utc).isoformat(),
+                "created_at": datetime.now(UTC).isoformat(),
                 "file_count": file_count,
             }
             archive.writestr("backup_manifest.json", json.dumps(manifest, ensure_ascii=False, indent=2))

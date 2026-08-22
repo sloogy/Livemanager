@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime
-import os
 import threading
 from copy import deepcopy
 from pathlib import Path
@@ -11,6 +9,7 @@ from typing import Any
 
 from .paths import config_dir
 from .repositories import CORE_LATEST_MANIFEST_URL
+from .zeitmarke import dateimarke
 
 # Auslieferungszustand einer neuen Installation. Bewusst getrennt von den
 # Rückfallprofilen: ein frisch installierter LifePlanner soll nicht nach
@@ -37,7 +36,6 @@ _DEFAULTS: dict[str, Any] = {
     # demselben Profil; ausgeschaltet zählt der Eintrag in module_themes.
     "theme_apply_to_all": True,
     "module_themes": {},
-    "language": "de",
     "ollama": {"enabled": False, "endpoint": "http://127.0.0.1:11434", "model": ""},
     "updates": {"manifest_url": CORE_LATEST_MANIFEST_URL, "auto_check": False, "channel": "stable"},
     "permissions": {},
@@ -97,7 +95,7 @@ class SettingsStore:
         was darin stand. Oft ist nur ein Zeichen falsch und die Datei ließe
         sich von Hand retten; dafür muss sie aber noch da sein.
         """
-        marke = datetime.now().strftime("%Y%m%d-%H%M%S")
+        marke = dateimarke()
         ziel = self.path.with_name(f"{self.path.name}.kaputt-{marke}")
         # Zwei Fehlschlaege in derselben Sekunde bekamen denselben
         # Namen; der zweite ueberschrieb den ersten und die

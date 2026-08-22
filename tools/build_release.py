@@ -7,7 +7,7 @@ import os
 import shutil
 import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -175,7 +175,7 @@ def _build_update_assets(shell: Path, *, signing: ReleaseSigning) -> None:
     manifest = {
         "schema": "lifeplanner.update.v1",
         "channel": "stable",
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
         "components": manifest_components,
     }
     manifest_path = update_dir / "lifeplanner-latest.json"
@@ -233,7 +233,7 @@ def _write_installer_sources(installer_source: Path) -> None:
     payload = {
         "schema": "lifeplanner.installer-sources.v1",
         "generated_for": APP_VERSION,
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
         "modules": modules,
     }
     (installer_source / "installer-module-sources.json").write_text(
@@ -257,7 +257,7 @@ def _write_source_provenance(sources: dict[str, ResolvedModuleSource]) -> None:
     payload = {
         "schema": "lifeplanner.build-provenance.v1",
         "lifeplanner_version": APP_VERSION,
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
         "modules": [sources[module_id].provenance() for module_id in sorted(sources)],
     }
     path = RELEASE / "module-source-provenance.json"

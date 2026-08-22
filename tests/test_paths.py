@@ -1,4 +1,3 @@
-from pathlib import Path
 
 from lifeplanner_core import paths
 

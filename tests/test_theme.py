@@ -1,5 +1,4 @@
 import json
-import os
 from pathlib import Path
 
 from lifeplanner_core.plugin_loader import discover_modules
@@ -135,8 +134,8 @@ def test_theme_directory_is_resolved_for_frozen_builds(monkeypatch, tmp_path):
 def test_shared_theme_uses_the_freizeitmanager_exchange_format(monkeypatch, tmp_path):
     """Der FreizeitManager liest bereits lifeplanner.theme.v1 aus dem Bridge-Ordner."""
     monkeypatch.setenv("LIFEPLANNER_DATA_DIR", str(tmp_path / "data"))
-    from lifeplanner_core.theme import SHARED_THEME_FILE, publish_shared_theme
     from lifeplanner_core.paths import bridge_dir
+    from lifeplanner_core.theme import SHARED_THEME_FILE, publish_shared_theme
 
     path = publish_shared_theme("default", ThemeCatalog().resolve("Nord - Dunkel"))
 

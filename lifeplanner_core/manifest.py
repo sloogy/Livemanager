@@ -52,7 +52,7 @@ class ModuleManifest:
     module_dir: Path = Path(".")
 
     @classmethod
-    def load(cls, path: Path) -> "ModuleManifest":
+    def load(cls, path: Path) -> ModuleManifest:
         try:
             raw = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as exc:

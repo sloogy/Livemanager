@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from ..i18n import SPRACHEN, t
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
@@ -19,9 +18,11 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from ..i18n import SPRACHEN, t
 from ..plugin_loader import PluginLoadResult
 from ..settings import SettingsStore
 from ..theme import SYSTEM_THEME, ThemeCatalog, ThemeProfile, build_stylesheet
+
 
 def _system_label() -> str:
     """Erst beim Aufbau der Seite auflösen - beim Import steht die Sprache

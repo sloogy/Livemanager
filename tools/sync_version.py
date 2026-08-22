@@ -21,7 +21,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from lifeplanner_core import APP_VERSION  # noqa: E402
+from lifeplanner_core import APP_VERSION
 
 # Dateien, die immer die aktuelle Version beschreiben. CHANGELOG.md fehlt hier
 # absichtlich - dort steht der Verlauf.

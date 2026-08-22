@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import os
-from ..i18n import t
-from PySide6.QtCore import QCoreApplication, QThread, QTimer, Qt, Signal
+
+from PySide6.QtCore import QCoreApplication, Qt, QThread, QTimer, Signal
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from ..i18n import t
 from ..updater.service import UpdateCheckResult, UpdateService
 
 

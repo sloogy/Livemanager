@@ -2,13 +2,17 @@ from __future__ import annotations
 
 import base64
 import json
-from pathlib import Path
 
 import pytest
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-from cryptography.hazmat.primitives.serialization import Encoding, PrivateFormat, NoEncryption, PublicFormat
+from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
-from lifeplanner_core.updater.manifest import UpdateManifestError, compare_manifest, parse_manifest, platform_key
+from lifeplanner_core.updater.manifest import (
+    UpdateManifestError,
+    compare_manifest,
+    parse_manifest,
+    platform_key,
+)
 from lifeplanner_core.updater.signing import verify_manifest_signature
 
 

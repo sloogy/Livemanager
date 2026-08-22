@@ -12,7 +12,9 @@ from tools.module_sources import ModuleSourceError, resolve_module_sources
 
 def run(command: list[str], *, cwd: Path = ROOT) -> int:
     print("+", " ".join(command))
-    return subprocess.run(command, cwd=cwd).returncode
+    # check=False: der Aufrufer sammelt die Rueckgabewerte und entscheidet
+    # selbst, welcher Fehlschlag den Lauf beendet.
+    return subprocess.run(command, cwd=cwd, check=False).returncode
 
 
 def core_checks() -> list[tuple[Path, list[str]]]:
@@ -42,8 +44,11 @@ def core_checks() -> list[tuple[Path, list[str]]]:
         (ROOT, [sys.executable, "tools/build_linux_release.py", "--help"]),
         (ROOT, [sys.executable, "tools/prepare_dev_modules.py", "--help"]),
         (ROOT, [sys.executable, "installer_bootstrap.py", "--help"]),
-        (ROOT, [sys.executable, "-m", "ruff", "check", ".",
-                "--select", "E9,F63,F7,F82"]),
+        # Ohne --select: die Auswahl steht in ruff.toml, begruendet und
+        # gemeinsam mit dem lokalen Lauf. Vorher pruefte das Gate nur die
+        # Syntax-Klasse, waehrend lokal die globale Konfiguration des
+        # Entwicklerrechners galt - beide sagten damit Verschiedenes.
+        (ROOT, [sys.executable, "-m", "ruff", "check", "."]),
         (ROOT, [sys.executable, "tools/exception_audit.py"]),
         (ROOT, [sys.executable, "-m", "pytest", "-q", "tests"]),
     ]

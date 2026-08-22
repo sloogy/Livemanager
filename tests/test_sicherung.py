@@ -16,7 +16,6 @@ import stat
 import pytest
 
 from lifeplanner_core.backup_service import (
-    SICHERUNGEN_AUFBEWAHREN,
     create_profile_backup,
     verify_backup,
 )

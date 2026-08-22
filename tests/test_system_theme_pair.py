@@ -10,8 +10,7 @@ from __future__ import annotations
 
 import json
 
-from lifeplanner_core.settings import (INITIAL_DARK_THEME, INITIAL_LIGHT_THEME,
-                                       SettingsStore)
+from lifeplanner_core.settings import INITIAL_DARK_THEME, INITIAL_LIGHT_THEME, SettingsStore
 from lifeplanner_core.theme import SYSTEM_THEME, ThemeCatalog
 
 

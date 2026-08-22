@@ -1,25 +1,24 @@
 from __future__ import annotations
 
-from ..atomic_write import atomar_schreiben
-
 import json
-import os
 import shutil
 import subprocess
 import sys
 import uuid
+from collections.abc import Iterable
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Iterable, Mapping
 
 from packaging.specifiers import SpecifierSet
 from packaging.version import Version
 
 from .. import APP_VERSION
+from ..atomic_write import atomar_schreiben
 from ..manifest import ModuleManifest
 from ..paths import app_dir, data_root
 from ..plugin_loader import PluginLoadResult
+from ..zeitmarke import dateimarke
 from .io import (
     UpdateIOError,
     download_asset,
@@ -226,7 +225,7 @@ class UpdateService:
         restart_command = self._restart_command(app_root)
         plan = {
             "schema": "lifeplanner.update-plan.v1",
-            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
             "app_root": str(app_root),
             "update_root": str(self.update_root.resolve()),
             "wait_pids": [int(parent_pid)],
@@ -234,7 +233,7 @@ class UpdateService:
             "backup_profiles": True,
             "operations": operations,
         }
-        path = self.update_root / "plans" / f"plan-{datetime.now().strftime('%Y%m%d-%H%M%S')}-{uuid.uuid4().hex[:8]}.json"
+        path = self.update_root / "plans" / f"plan-{dateimarke()}-{uuid.uuid4().hex[:8]}.json"
         atomar_schreiben(path, json.dumps(plan, ensure_ascii=False, indent=2))
         return path
 

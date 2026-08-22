@@ -1,0 +1,19 @@
+# Feste Regelauswahl, damit lokale Prueflaeufe und CI dasselbe sagen -
+# unabhaengig von einer globalen Ruff-Konfiguration auf dem Entwicklerrechner.
+# Gleiches Muster wie im FreizeitManager; die Auswahl unterscheidet sich nur
+# dort, wo die Aufgabe es verlangt.
+line-length = 110
+target-version = "py311"
+
+[lint]
+# Echte Fehler plus toter Code und Importordnung.
+#
+# DTZ ist hier - anders als im FreizeitManager - ausdruecklich dabei: Der Host
+# schreibt Events, Manifeste und Update-Ergebnisse, die andere Programme lesen.
+# Eine naive Ortszeit in einer solchen Angabe ist ein Fehler, der erst beim
+# Vergleich zweier Rechner auffaellt. Die einzige bewusste Ausnahme - lokale
+# Zeit in Dateinamen - steht begruendet in lifeplanner_core/zeitmarke.py.
+select = ["E4", "E7", "E9", "F", "I", "UP", "SIM", "RUF100", "DTZ"]
+ignore = [
+    "E402",    # Importe nach sys.path-Anpassung sind in Werkzeugen noetig
+]

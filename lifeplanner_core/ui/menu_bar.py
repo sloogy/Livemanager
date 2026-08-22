@@ -147,8 +147,8 @@ def _ueber_zeigen(fenster) -> None:
     """
     from PySide6.QtWidgets import QMessageBox
 
-    from ..paths import data_root
     from .. import APP_VERSION
+    from ..paths import data_root
 
     QMessageBox.information(
         fenster,

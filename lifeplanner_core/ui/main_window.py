@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from PySide6.QtCore import QTimer, QUrl, Qt
+from PySide6.QtCore import Qt, QTimer, QUrl
 from PySide6.QtGui import QDesktopServices, QFont
 from PySide6.QtWidgets import (
     QApplication,
@@ -26,15 +26,14 @@ from PySide6.QtWidgets import (
 from ..backup_service import BackupError, create_profile_backup
 from ..bridge import summarize_fpm_outbox
 from ..diagnostics import write_diagnostics
-from ..manifest import ModuleManifest
 from ..i18n import t
+from ..manifest import ModuleManifest
 from ..paths import bridge_dir, data_root, module_data_dir
-from ..repositories import BUDGETMANAGER_REPOSITORY, CORE_REPOSITORY, FPM_REPOSITORY
 from ..plugin_loader import PluginLoadResult
 from ..process_manager import ModuleLaunchError, ModuleProcessManager
+from ..repositories import BUDGETMANAGER_REPOSITORY, CORE_REPOSITORY, FPM_REPOSITORY
 from ..settings import SettingsStore
-from ..theme import (SYSTEM_THEME, ThemeCatalog, build_stylesheet,
-                     publish_shared_theme, publish_theme)
+from ..theme import SYSTEM_THEME, ThemeCatalog, build_stylesheet, publish_shared_theme, publish_theme
 from .appearance_page import AppearancePage
 from .module_manager_page import ModuleManagerPage
 from .update_page import UpdatePage
@@ -43,7 +42,7 @@ logger = logging.getLogger(__name__)
 
 
 class ModuleCard(QFrame):
-    def __init__(self, manifest: ModuleManifest, host: "MainWindow"):
+    def __init__(self, manifest: ModuleManifest, host: MainWindow):
         super().__init__()
         self.manifest = manifest
         self.host = host
@@ -330,7 +329,8 @@ class MainWindow(QMainWindow):
         path.mkdir(parents=True, exist_ok=True)
         QDesktopServices.openUrl(QUrl.fromLocalFile(str(path.resolve())))
 
-    def closeEvent(self, event) -> None:  # noqa: N802 - Qt API
+    # Gross geschrieben, weil Qt den Namen so aufruft - kein Tippfehler.
+    def closeEvent(self, event) -> None:
         self.process_manager.stop_all(profile_id=self.profile_id)
         super().closeEvent(event)
 

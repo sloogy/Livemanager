@@ -13,7 +13,6 @@ import requests
 
 from . import APP_VERSION
 from .github_auth import github_token
-
 from .installer_catalog import (
     InstallerCatalogError,
     load_module_sources,
