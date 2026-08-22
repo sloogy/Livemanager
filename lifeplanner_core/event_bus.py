@@ -67,8 +67,18 @@ class FileEventBus:
         with self.path.open("rb") as handle:
             handle.seek(max(0, offset))
             while True:
+                vorher = handle.tell()
                 raw = handle.readline()
                 if not raw:
+                    break
+                if not raw.endswith(b"\n"):
+                    # Die letzte Zeile ist noch nicht fertig geschrieben. Sie
+                    # jetzt zu verwerfen und den Offset dahinter zu setzen
+                    # hiesse, ihren Anfang endgueltig zu verlieren: Der
+                    # Schreiber haengt gleich den Rest an, und der waere dann
+                    # eine Zeile ohne Anfang. Also hier stehen bleiben und
+                    # beim naechsten Mal von vorn lesen.
+                    handle.seek(vorher)
                     break
                 try:
                     obj = json.loads(raw.decode("utf-8"))
