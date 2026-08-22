@@ -44,6 +44,27 @@
     "system_einleitung": "Zentrale Pfade, Sicherung und Diagnose des LifePlanner-Core.",
     "system_titel": "System"
   },
+  "menu": {
+    "about": "Ü&ber LifePlanner",
+    "about_data": "Datenordner:",
+    "about_profile": "Profil:",
+    "about_title": "Über LifePlanner",
+    "backup": "Profil &sichern",
+    "check_updates": "Nach &Updates suchen",
+    "diagnostics": "&Diagnose schreiben",
+    "exit": "B&eenden",
+    "exit_tip": "LifePlanner schließen und alle Module stoppen",
+    "extras": "E&xtras",
+    "file": "&Datei",
+    "fullscreen": "&Vollbild",
+    "fullscreen_tip": "Fenster auf den ganzen Bildschirm",
+    "help": "&Hilfe",
+    "open_bridge_folder": "&Brückenordner öffnen",
+    "open_data_folder": "Daten&ordner öffnen",
+    "pages": "&Seite wechseln",
+    "refresh": "Status &aktualisieren",
+    "view": "&Ansicht"
+  },
   "module": {
     "bereit": "Bereit.",
     "deinstallation_fehler": "Deinstallation fehlgeschlagen",
@@ -77,6 +98,14 @@
     "unsigniert": "Unsigniertes Modulpaket",
     "von_github": "BudgetManager / FPM von GitHub",
     "wird_installiert": "Modul wird installiert"
+  },
+  "navigation": {
+    "uebersicht": "Übersicht",
+    "module": "Module",
+    "integration": "Integration",
+    "darstellung": "Darstellung",
+    "updates": "Updates",
+    "system": "System"
   },
   "updates": {
     "alle_auswaehlen": "Alle verfügbaren auswählen",

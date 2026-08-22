@@ -44,6 +44,27 @@
     "system_einleitung": "Central paths, backup and diagnostics of the LifePlanner core.",
     "system_titel": "System"
   },
+  "menu": {
+    "about": "&About LifePlanner",
+    "about_data": "Data folder:",
+    "about_profile": "Profile:",
+    "about_title": "About LifePlanner",
+    "backup": "Back up &profile",
+    "check_updates": "Check for &updates",
+    "diagnostics": "Write &diagnostics",
+    "exit": "E&xit",
+    "exit_tip": "Close LifePlanner and stop all modules",
+    "extras": "E&xtras",
+    "file": "&File",
+    "fullscreen": "&Full screen",
+    "fullscreen_tip": "Fill the whole screen",
+    "help": "&Help",
+    "open_bridge_folder": "Open &bridge folder",
+    "open_data_folder": "Open data f&older",
+    "pages": "Go to &page",
+    "refresh": "Refresh &status",
+    "view": "&View"
+  },
   "module": {
     "bereit": "Ready.",
     "deinstallation_fehler": "Uninstall failed",
@@ -77,6 +98,14 @@
     "unsigniert": "Unsigned module package",
     "von_github": "BudgetManager / FPM from GitHub",
     "wird_installiert": "Installing module"
+  },
+  "navigation": {
+    "uebersicht": "Overview",
+    "module": "Modules",
+    "integration": "Integration",
+    "darstellung": "Appearance",
+    "updates": "Updates",
+    "system": "System"
   },
   "updates": {
     "alle_auswaehlen": "Select all available",

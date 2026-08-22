@@ -234,6 +234,18 @@ def build_stylesheet(profile: ThemeProfile) -> str:
     return f"""
 QMainWindow, QWidget {{ background: {bg_app}; color: {text}; }}
 QLabel {{ color: {text}; background: transparent; }}
+
+/* Loop 33: Menueleiste, nach der BudgetManager-Vorlage. Sie wuchs sonst als
+   einziger Teil der Oberflaeche nicht mit der Schrift und truege keinen der
+   abgestuften Radien. */
+QMenuBar {{ background: {bg_panel}; color: {text}; font-size: {px(14)}px; padding: {px(2)}px; }}
+QMenuBar::item {{ padding: {px(4)}px {px(10)}px; border-radius: {radius}px; }}
+QMenuBar::item:selected {{ background: {sel_bg}; color: {sel_text}; }}
+QMenu {{ background: {bg_panel}; color: {text}; border: 1px solid {grid}; border-radius: {radius}px; padding: {px(4)}px; font-size: {px(14)}px; }}
+QMenu::item {{ padding: {px(6)}px {px(18)}px; border-radius: {radius_feld}px; }}
+QMenu::item:selected {{ background: {sel_bg}; color: {sel_text}; }}
+QMenu::item:disabled {{ color: {text_dim}; }}
+QMenu::separator {{ height: 1px; background: {grid}; margin: {px(4)}px {px(8)}px; }}
 QListWidget {{ background: {bg_side}; color: {text}; border: 0; padding: {px(18)}px {px(8)}px; font-size: {px(15)}px; }}
 QListWidget::item {{ padding: 12px; border-radius: {radius_karte}px; margin: 2px 0; }}
 QListWidget::item:hover {{ background: {hover_bg}; color: {hover_text}; }}

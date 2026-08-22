@@ -44,6 +44,27 @@
     "system_einleitung": "Chemins centraux, sauvegarde et diagnostic du cœur de LifePlanner.",
     "system_titel": "Système"
   },
+  "menu": {
+    "about": "À &propos de LifePlanner",
+    "about_data": "Dossier de données :",
+    "about_profile": "Profil :",
+    "about_title": "À propos de LifePlanner",
+    "backup": "&Sauvegarder le profil",
+    "check_updates": "Rechercher des &mises à jour",
+    "diagnostics": "Écrire un &diagnostic",
+    "exit": "&Quitter",
+    "exit_tip": "Fermer LifePlanner et arrêter tous les modules",
+    "extras": "E&xtras",
+    "file": "&Fichier",
+    "fullscreen": "&Plein écran",
+    "fullscreen_tip": "Occuper tout l'écran",
+    "help": "Ai&de",
+    "open_bridge_folder": "Ouvrir le dossier &passerelle",
+    "open_data_folder": "Ouvrir le d&ossier de données",
+    "pages": "Aller à la pa&ge",
+    "refresh": "Actualiser l'é&tat",
+    "view": "&Affichage"
+  },
   "module": {
     "bereit": "Prêt.",
     "deinstallation_fehler": "Échec de la désinstallation",
@@ -77,6 +98,14 @@
     "unsigniert": "Paquet de module non signé",
     "von_github": "BudgetManager / FPM depuis GitHub",
     "wird_installiert": "Installation du module"
+  },
+  "navigation": {
+    "uebersicht": "Vue d'ensemble",
+    "module": "Modules",
+    "integration": "Intégration",
+    "darstellung": "Apparence",
+    "updates": "Mises à jour",
+    "system": "Système"
   },
   "updates": {
     "alle_auswaehlen": "Tout sélectionner",

@@ -106,6 +106,7 @@ class MainWindow(QMainWindow):
         self.resize(1120, 720)
         self.setMinimumSize(900, 600)
         self._build_ui(load_result)
+        self._setup_menu_bar()
         self.apply_theme()
         self._watch_system_color_scheme()
         self.timer = QTimer(self)
@@ -121,8 +122,13 @@ class MainWindow(QMainWindow):
         outer.setContentsMargins(0, 0, 0, 0)
         self.nav = QListWidget()
         self.nav.setFixedWidth(220)
-        for title in ("Übersicht", "Module", "Integration", "Darstellung", "Updates", "System"):
-            QListWidgetItem(title, self.nav)
+        # Loop 33: Diese sechs Titel standen als deutscher Klartext da - Loop 10
+        # hatte sie uebersehen. Auf Englisch und Franzoesisch war die
+        # Seitenliste damit das einzige, was deutsch blieb.
+        from .menu_bar import SEITEN
+
+        for schluessel in SEITEN:
+            QListWidgetItem(t(schluessel), self.nav)
         self.nav.currentRowChanged.connect(self._change_page)
         outer.addWidget(self.nav)
         self.stack = QStackedWidget()
@@ -141,6 +147,17 @@ class MainWindow(QMainWindow):
         outer.addWidget(self.stack, 1)
         self.setCentralWidget(root)
         self.nav.setCurrentRow(0)
+
+    def _setup_menu_bar(self) -> None:
+        """Menueleiste nach BudgetManager-Vorbild (Loop 33).
+
+        Sie ersetzt die Seitenliste nicht. Die Extras machen die Werkzeuge
+        auffindbar, die bisher nur auf der Systemseite lagen.
+        """
+        from .menu_bar import build_menu_bar, sync_menu_state
+
+        build_menu_bar(self)
+        sync_menu_state(self)
 
     def _header(self, title: str, subtitle: str) -> QVBoxLayout:
         layout = QVBoxLayout()
