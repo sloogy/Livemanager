@@ -154,6 +154,8 @@ class ModuleProcessManager:
         env[THEME_ENV_FILE] = str(path)
 
     def start(self, manifest: ModuleManifest, profile_id: str) -> RunningModule:
+        if not manifest.host_compatible(APP_VERSION):
+            raise ModuleLaunchError(manifest.host_compatibility_reason(APP_VERSION))
         current = self._running.get(manifest.module_id)
         if current and current.is_running:
             return current
