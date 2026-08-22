@@ -126,6 +126,10 @@ def command_install(args: argparse.Namespace) -> int:
         archive = cache / release.asset_name
         _download(release.asset_url, archive, release.asset_size)
         info = installer.inspect_package(archive)
+        # Bleibt stehen, obwohl stage_package seit Loop 34 selbst ablehnt: Der
+        # Bootstrap laeuft ohne Nutzer vor sich, und hier soll die Meldung
+        # sagen, um welches Modul es geht - nicht nur, dass etwas unsigniert
+        # war. Bestaetigen darf er nie.
         if not info.signed:
             raise ModuleInstallerError(f"Remote-Modul {info.name} ist nicht signiert und wird abgelehnt.")
         if info.component_id != module_id:

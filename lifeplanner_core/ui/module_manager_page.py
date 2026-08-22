@@ -425,7 +425,12 @@ class ModuleManagerPage(QWidget):
 
     def _install_package(self, info: ModulePackageInfo) -> None:
         try:
-            staged = self.installer.stage_package(info)
+            # Die Rueckfrage von oben ist damit ein Argument und keine
+            # stillschweigende Vorbedingung mehr: stage_package lehnt ein
+            # unsigniertes Paket sonst ab (Loop 34).
+            staged = self.installer.stage_package(
+                info, vertrauen_bestaetigt=not info.signed
+            )
             self.host.process_manager.stop(info.component_id, profile_id=self.host.profile_id)
             plan_path = self.update_service.write_plan([staged], parent_pid=os.getpid())
             self.update_service.launch_helper(plan_path)

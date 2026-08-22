@@ -185,5 +185,98 @@ def test_module_runtime_is_executable_even_if_package_lost_the_bit(
     installed_runtime = info.payload_dir / "Demo"
     if os.name != "nt":
         assert os.access(installed_runtime, os.X_OK)
-    # Granting the bit must not invalidate the payload hash.
+    # Granting the bit must not invalidate the payload hash. The package is
+    # unsigned, so staging needs the confirmation the module manager asks for
+    # (Loop 34) - here it stands in for the user's Yes.
+    assert info.signed is False
+    staged = service.stage_package(info, vertrauen_bestaetigt=True)
+    assert staged.tree_sha256 == info.payload_sha256
+
+
+# ── Loop 34: Die Vertrauensregel gehoert ins Modell, nicht nur in den Dialog ──
+
+def _unsigniertes_paket(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("LIFEPLANNER_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv("LIFEPLANNER_APP_DIR", str(tmp_path / "app"))
+    (tmp_path / "app/modules").mkdir(parents=True)
+    payload = _module_payload(tmp_path / "payload")
+    package = build_component_package(
+        payload=payload,
+        component_id="demo",
+        name="Demo-Modul",
+        version="1.0.0",
+        kind="module",
+        output=tmp_path / "demo.lpmodule",
+        requires_host=">=0.4.0",
+        platforms=(),
+        private_key_b64="",
+    )
+    service = ModuleInstallerService(UpdateService(PluginLoadResult((), ())))
+    return service, service.inspect_package(package)
+
+
+def test_ein_unsigniertes_paket_kommt_nicht_ohne_bestaetigung_durch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Bis Loop 34 stand diese Regel zweimal daneben statt einmal hier: als
+    Rueckfrage im Modulverwalter und als harte Ablehnung im Bootstrap. Wer
+    einen dritten Aufrufweg baut, haette sie nicht gehabt - und ein
+    unsigniertes Modul ist ausfuehrbarer Code mit Benutzerrechten.
+    """
+    service, info = _unsigniertes_paket(tmp_path, monkeypatch)
+    assert info.signed is False
+
+    with pytest.raises(ModuleInstallerError):
+        service.stage_package(info)
+
+
+def test_die_bestaetigung_muss_ausdruecklich_sein(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Der Standardwert ist fail-closed, wie bei der Update-Signatur aus
+    Loop 3: Nur wer die Frage tatsaechlich gestellt hat, darf ihn
+    ueberschreiben."""
+    service, info = _unsigniertes_paket(tmp_path, monkeypatch)
+
+    staged = service.stage_package(info, vertrauen_bestaetigt=True)
+    assert staged.tree_sha256 == info.payload_sha256
+
+
+def test_ein_signiertes_paket_braucht_die_bestaetigung_nicht(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Sonst waere die neue Huerde eine Huerde fuer alle - und der Anreiz,
+    ueberhaupt zu signieren, waere weg."""
+    monkeypatch.setenv("LIFEPLANNER_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv("LIFEPLANNER_APP_DIR", str(tmp_path / "app"))
+    (tmp_path / "app/modules").mkdir(parents=True)
+    private, public = _keys()
+    monkeypatch.setenv("LIFEPLANNER_UPDATE_PUBLIC_KEY_B64", public)
+    package = build_component_package(
+        payload=_module_payload(tmp_path / "payload"),
+        component_id="demo",
+        name="Demo-Modul",
+        version="1.0.0",
+        kind="module",
+        output=tmp_path / "demo.lpmodule",
+        requires_host=">=0.4.0",
+        platforms=(),
+        private_key_b64=private,
+    )
+    service = ModuleInstallerService(UpdateService(PluginLoadResult((), ())))
+    info = service.inspect_package(package)
+
+    assert info.signed is True
     assert service.stage_package(info).tree_sha256 == info.payload_sha256
+
+
+def test_der_bootstrap_bestaetigt_niemals() -> None:
+    """Er laeuft ohne Nutzer vor sich - dort kann niemand die Frage
+    beantworten. Ein ``vertrauen_bestaetigt=True`` in dieser Datei waere ein
+    stiller Weg an der Signaturpruefung vorbei."""
+    from pathlib import Path as _Path
+
+    quelle = (_Path(__file__).resolve().parents[1]
+              / "lifeplanner_core" / "installer_bootstrap.py").read_text(encoding="utf-8")
+    assert "vertrauen_bestaetigt" not in quelle
+    assert "ist nicht signiert und wird abgelehnt" in quelle

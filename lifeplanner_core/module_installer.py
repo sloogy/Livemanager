@@ -241,7 +241,28 @@ class ModuleInstallerService:
             shutil.rmtree(inspection, ignore_errors=True)
             raise ModuleInstallerError(str(exc)) from exc
 
-    def stage_package(self, info: ModulePackageInfo) -> StagedComponent:
+    def stage_package(
+        self, info: ModulePackageInfo, *, vertrauen_bestaetigt: bool = False
+    ) -> StagedComponent:
+        """Bereitet ein geprüftes Paket zur Installation vor.
+
+        ``vertrauen_bestaetigt`` ist die einzige Tür, durch die ein
+        unsigniertes Paket kommt. Bis Loop 34 stand diese Regel zweimal
+        daneben statt einmal hier: einmal als Rückfrage im Modulverwalter,
+        einmal als harte Ablehnung im Installer-Bootstrap. Zwei Kopien
+        derselben Regel sind eine Kopie zu viel – wer einen dritten
+        Aufrufweg baut, hat sie dann nicht, und ein unsigniertes Modul ist
+        ausführbarer Code mit den Rechten des Benutzerkontos.
+
+        Der Standardwert ist ``False``: fail-closed, wie bei der
+        Update-Signatur aus Loop 3. Nur ein Aufrufer, der die Frage
+        tatsächlich gestellt hat, darf ihn überschreiben.
+        """
+        if not info.signed and not vertrauen_bestaetigt:
+            raise ModuleInstallerError(
+                "Unsigniertes Paket: Die Installation setzt eine ausdrückliche "
+                "Vertrauensbestätigung voraus."
+            )
         if not info.compatible:
             raise ModuleInstallerError(info.compatibility_reason)
         if not info.payload_dir.is_dir():
