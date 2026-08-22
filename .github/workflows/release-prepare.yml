@@ -69,15 +69,26 @@ jobs:
 
           workflow = Path('.github/workflows/release.yml')
           text = workflow.read_text(encoding='utf-8')
-          replacements = {
-              r"(BUDGETMANAGER_REF\s*\|\|\s*')v[^']+(')": r"\g<1>v2.2.72\g<2>",
-              r"(FPM_REF\s*\|\|\s*')v[^']+(')": r"\g<1>v1.2.2\g<2>",
-              r"(FREIZEITMANAGER_REF\s*\|\|\s*')v[^']+(')": r"\g<1>v0.1.11\g<2>",
-          }
-          for pattern, replacement in replacements.items():
+          replacements = (
+              (
+                  r"(repository:\s*\$\{\{ vars\.BUDGETMANAGER_REPOSITORY[^\n]*\}\}\s*\n\s*ref:)\s*[^\n]+",
+                  r"\1 'v2.2.72'",
+              ),
+              (
+                  r"(repository:\s*\$\{\{ vars\.FPM_REPOSITORY[^\n]*\}\}\s*\n\s*ref:)\s*[^\n]+",
+                  r"\1 'v1.2.2'",
+              ),
+              (
+                  r"(repository:\s*\$\{\{ vars\.FREIZEITMANAGER_REPOSITORY[^\n]*\}\}\s*\n\s*ref:)\s*[^\n]+",
+                  r"\1 'v0.1.11'",
+              ),
+          )
+          for pattern, replacement in replacements:
               text, count = re.subn(pattern, replacement, text)
-              if count < 1:
-                  raise SystemExit(f'Release-Ref nicht gefunden: {pattern}')
+              if count < 2:
+                  raise SystemExit(
+                      f'Release-Ref nicht in Windows+Linux gefunden: {pattern} ({count})'
+                  )
           workflow.write_text(text, encoding='utf-8')
           PY
           python tools/sync_version.py
