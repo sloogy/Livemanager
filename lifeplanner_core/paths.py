@@ -90,8 +90,18 @@ def module_data_dir(profile_id: str, module_id: str) -> Path:
 
 
 def bridge_dir(profile_id: str) -> Path:
+    """Der Austauschordner eines Profils.
+
+    Er wird ins gemeinsame Register eingetragen, weil die Module ihn sonst nur
+    kennen, solange der Host sie startet. Wer FPM oder den BudgetManager auch
+    eigenstaendig oeffnet, findet den hier liegenden Stand nur ueber das
+    Register - sonst sieht er dort eine leere Bruecke.
+    """
     path = profile_dir(profile_id) / "bridge"
     path.mkdir(parents=True, exist_ok=True)
+    from .bridge_registry import eintragen
+
+    eintragen(path)
     return path
 
 
