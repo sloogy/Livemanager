@@ -1,5 +1,19 @@
 # Changelog
 
+## Unveröffentlicht
+
+### Sicherheit
+
+- **Der Ausnahmen-Ratchet sah `contextlib.suppress` nicht.** Er zählt stumme
+  Schlucker (`except Exception: pass`) und deckelt sie — kannte aber nur
+  `except`-Handler. Dieselbe Sache als `with contextlib.suppress(...)`
+  geschrieben verschwand spurlos aus der Zählung, ohne dass sie besser
+  meldete. Genau dazu rät ruffs SIM105. Der Host ist seit Loop 24 das erste
+  Programm der Suite ohne einen einzigen stummen Schlucker — mit der alten
+  Zählweise war das eine Aussage über `except`, nicht über Schweigen. Der
+  Ratchet zählt `suppress` jetzt mit (wortgleich in allen vier Programmen),
+  SIM105 bleibt begründet aus. Der Befund für den LifePlanner bleibt: null.
+
 ## 0.5.15 – Sicherheit und Stabilität
 
 ### Stabilität
