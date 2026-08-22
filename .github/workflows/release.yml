@@ -3,6 +3,16 @@ name: Release
 permissions:
   contents: write
 
+# Ein Release baut und veroeffentlicht genau einmal. Vorher lief der Bau auch
+# bei einem [release]-Commit auf main - beim Release werden main und Tag
+# zusammen gepusht, also zweimal fuer denselben Stand. Beide Laeufe luden
+# unter denselben Tag hoch, und die Assets sind signiert: das Manifest traegt
+# die Hashes der Pakete. Kommen Manifest und Paket aus verschiedenen Builds,
+# passt die Signatur nicht mehr und der Updater lehnt fail-closed ab.
+concurrency:
+  group: lifeplanner-release-${{ github.ref }}
+  cancel-in-progress: false
+
 on:
   workflow_dispatch:
   push:
@@ -13,7 +23,7 @@ on:
 
 jobs:
   build-windows:
-    if: startsWith(github.ref, 'refs/tags/') || (github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, '[release]')) || github.event_name == 'workflow_dispatch'
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
     runs-on: windows-latest
     env:
       LIFEPLANNER_BUDGETMANAGER_SOURCE: ${{ github.workspace }}\module-sources\budgetmanager
@@ -139,7 +149,7 @@ jobs:
             lifeplanner/release/update-assets/*
 
   build-linux:
-    if: startsWith(github.ref, 'refs/tags/') || (github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, '[release]')) || github.event_name == 'workflow_dispatch'
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     env:
       LIFEPLANNER_BUDGETMANAGER_SOURCE: ${{ github.workspace }}/module-sources/budgetmanager
