@@ -1,0 +1,110 @@
+name: Prepare Suite Release
+
+on:
+  push:
+    branches:
+      - 'release-trigger/lifeplanner-v*'
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: lifeplanner-release-prepare-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Hostversion und geprüfte Modulstände setzen
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME#release-trigger/}"
+          VERSION="${TAG#lifeplanner-v}"
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          python - "$VERSION" <<'PY'
+          import json, re, sys
+          from pathlib import Path
+
+          version = sys.argv[1]
+          core = Path('lifeplanner_core/__init__.py')
+          source = core.read_text(encoding='utf-8')
+          source, count = re.subn(
+              r'^APP_VERSION\s*=\s*"[^"]+"',
+              f'APP_VERSION = "{version}"',
+              source,
+              count=1,
+              flags=re.M,
+          )
+          if count != 1:
+              raise SystemExit('APP_VERSION nicht eindeutig gefunden')
+          core.write_text(source, encoding='utf-8')
+
+          lock_path = Path('dependencies/modules.lock.json')
+          lock = json.loads(lock_path.read_text(encoding='utf-8'))
+          wanted = {
+              'budgetmanager': ('2.2.72', 'v2.2.72'),
+              'fpm': ('1.2.1', 'v1.2.1'),
+              'freizeitmanager': ('0.1.10', 'v0.1.10'),
+          }
+          for module in lock['modules']:
+              if module['id'] in wanted:
+                  module['version'], module['default_ref'] = wanted[module['id']]
+          lock_path.write_text(json.dumps(lock, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
+          workflow = Path('.github/workflows/release.yml')
+          text = workflow.read_text(encoding='utf-8')
+          replacements = {
+              r"(BUDGETMANAGER_REF\s*\|\|\s*')v[^']+(')": r"\g<1>v2.2.72\g<2>",
+              r"(FPM_REF\s*\|\|\s*')v[^']+(')": r"\g<1>v1.2.1\g<2>",
+              r"(FREIZEITMANAGER_REF\s*\|\|\s*')v[^']+(')": r"\g<1>v0.1.10\g<2>",
+          }
+          for pattern, replacement in replacements.items():
+              text, count = re.subn(pattern, replacement, text)
+              if count < 1:
+                  raise SystemExit(f'Release-Ref nicht gefunden: {pattern}')
+          workflow.write_text(text, encoding='utf-8')
+          PY
+          python tools/sync_version.py
+          python tools/sync_version.py --check
+
+      - name: Release-Validierung ohne Modulbuild
+        run: python tools/validate_release.py
+
+      - name: Synchronisierten Release-Commit erzeugen
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "release: LifePlanner ${GITHUB_REF_NAME#release-trigger/lifeplanner-v}"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
+
+      - name: Tag einmalig erzeugen und bestehenden Release-Workflow starten
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME#release-trigger/}"
+          if git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null 2>&1; then
+            echo "Tag ${TAG} existiert bereits; Abbruch statt Überschreiben." >&2
+            exit 1
+          fi
+          git tag "$TAG" HEAD
+          git push origin "$TAG"
+          gh workflow run release.yml --ref "$TAG"
