@@ -69,3 +69,29 @@ def test_die_geretteten_dateien_ueberschreiben_sich_nicht(tmp_path):
         time.sleep(1.05)  # der Zeitstempel loest auf Sekunden auf
     gerettet = sorted(p.read_text(encoding="utf-8") for p in tmp_path.glob("*.kaputt-*"))
     assert gerettet == ["{erster", "{zweiter"]
+
+
+def test_zwei_fehlschlaege_in_derselben_sekunde(tmp_path):
+    """Beide Fassungen bleiben erhalten - der Zeitstempel allein reicht nicht.
+
+    Vorher trugen beide denselben Namen, der zweite ueberschrieb den ersten,
+    und die urspruengliche Fassung war doch wieder weg.
+    """
+    ziel = tmp_path / "settings.json"
+    for inhalt in ("{erster", "{zweiter"):
+        ziel.write_text(inhalt, encoding="utf-8")
+        SettingsStore(ziel).load()
+
+    gerettet = sorted(tmp_path.glob("settings.json.kaputt-*"))
+    assert len(gerettet) == 2
+    assert {p.read_text(encoding="utf-8") for p in gerettet} == {"{erster", "{zweiter"}
+
+
+def test_beiseitegelegte_fassungen_wachsen_nicht_unbegrenzt(tmp_path):
+    """Sonst entstuende bei jedem Start eine weitere Datei."""
+    ziel = tmp_path / "settings.json"
+    for _ in range(15):
+        ziel.write_text("{kaputt", encoding="utf-8")
+        SettingsStore(ziel).load()
+
+    assert len(list(tmp_path.glob("settings.json.kaputt-*"))) == 10

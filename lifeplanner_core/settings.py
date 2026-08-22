@@ -99,6 +99,15 @@ class SettingsStore:
         """
         marke = datetime.now().strftime("%Y%m%d-%H%M%S")
         ziel = self.path.with_name(f"{self.path.name}.kaputt-{marke}")
+        # Zwei Fehlschlaege in derselben Sekunde bekamen denselben
+        # Namen; der zweite ueberschrieb den ersten und die
+        # urspruengliche Fassung war weg.
+        zaehler = 1
+        while ziel.exists():
+            ziel = self.path.with_name(
+                f"{self.path.name}.kaputt-{marke}-{zaehler}"
+            )
+            zaehler += 1
         try:
             self.path.replace(ziel)
         except OSError as fehler:
@@ -108,6 +117,30 @@ class SettingsStore:
         _log.warning("%s war unlesbar (%s) - beiseitegelegt als %s, "
                      "es gelten die Standardwerte",
                      self.path.name, grund, ziel.name)
+        self._kaputte_ausduennen()
+
+    def _kaputte_ausduennen(self, behalten: int = 10) -> None:
+        """Haelt die beiseitegelegten Fassungen in Grenzen.
+
+        Ohne das entsteht bei jedem Start eine weitere Datei, solange
+        die Einstellungen kaputt bleiben - und niemand raeumt sie je auf.
+        """
+        pfad = self.path
+        try:
+            staende = sorted(
+                pfad.parent.glob(f"{pfad.name}.kaputt-*"),
+                key=lambda q: q.stat().st_mtime,
+                reverse=True,
+            )
+        except OSError as fehler:
+            _log.debug("Beiseitegelegte Fassungen nicht auflistbar: %s", fehler)
+            return
+        for veraltet in staende[behalten:]:
+            try:
+                veraltet.unlink()
+            except OSError as fehler:
+                _log.debug("%s bleibt liegen: %s", veraltet.name, fehler)
+
 
     @staticmethod
     def _merge(base: dict[str, Any], incoming: dict[str, Any]) -> dict[str, Any]:

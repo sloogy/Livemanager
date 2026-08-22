@@ -1,5 +1,19 @@
 # Changelog
 
+## Unveröffentlicht
+
+### Stabilität
+
+- **Zwei kaputte Einstellungsdateien in derselben Sekunde** bekamen denselben
+  Namen; die zweite überschrieb die erste und die ursprüngliche Fassung war
+  doch wieder weg. Außerdem wuchsen die beiseitegelegten Fassungen unbegrenzt
+  — jetzt bleiben zehn.
+- **Der Ausnahmen-Ratchet ist eingebaut** und läuft im Release-Lauf mit. Er
+  prüft den Syntaxbaum statt Textzeilen und erfasst alles außerhalb von Tests
+  und Werkzeugen — `update_helper.py` und `windows_launcher.py`, also
+  ausgerechnet der Update-Pfad, standen vorher außerhalb jeder Prüfliste.
+- **Ruff läuft jetzt im Release-Lauf** mit denselben Regeln wie in FPM.
+
 ## 0.5.13 – Sicherheit und Stabilität
 
 ### Sicherheit

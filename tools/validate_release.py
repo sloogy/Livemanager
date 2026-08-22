@@ -42,6 +42,9 @@ def core_checks() -> list[tuple[Path, list[str]]]:
         (ROOT, [sys.executable, "tools/build_linux_release.py", "--help"]),
         (ROOT, [sys.executable, "tools/prepare_dev_modules.py", "--help"]),
         (ROOT, [sys.executable, "installer_bootstrap.py", "--help"]),
+        (ROOT, [sys.executable, "-m", "ruff", "check", ".",
+                "--select", "E9,F63,F7,F82"]),
+        (ROOT, [sys.executable, "tools/exception_audit.py"]),
         (ROOT, [sys.executable, "-m", "pytest", "-q", "tests"]),
     ]
 
