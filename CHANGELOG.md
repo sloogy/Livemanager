@@ -1,6 +1,10 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.6.1 — 23. August 2026
+
+Der Host wird jetzt typgeprüft — vier echte Funde brachte die Einführung.
+
+Modulstände: BudgetManager 2.4.0, FPM 1.4.0, FreizeitManager 0.2.1.
 
 ### Stabilität
 
