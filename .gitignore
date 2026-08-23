@@ -31,3 +31,8 @@ installation.json
 .idea/
 .DS_Store
 Thumbs.db
+
+# Update-Vertrauensanker: entsteht im Release-Bau (tools/materialize_update_public_key.py)
+# und gehoert nicht in den Quellbaum - test_update_vertrauensanker.py setzt das voraus.
+# Lokal materialisiert, damit ein aus dem Repo gestarteter Host Updates nicht fail-closed ablehnt.
+lifeplanner_core/resources/lifeplanner_update_public_key.b64

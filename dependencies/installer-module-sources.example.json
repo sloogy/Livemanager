@@ -1,6 +1,6 @@
 {
   "schema": "lifeplanner.installer-sources.v1",
-  "generated_for": "0.6.2",
+  "generated_for": "0.6.3",
   "modules": [
     {
       "id": "budgetmanager",
@@ -8,7 +8,7 @@
       "repository": "sloogy/Budgetmanager",
       "asset_pattern": "budgetmanager_(?P<version>[0-9][0-9A-Za-z._-]*)_Windows_x86_64\\.lpmodule",
       "description": "Budget, Buchungen, Forecasts, Sparziele und Monatsabschluss.",
-      "requires_host": ">=0.6.2"
+      "requires_host": ">=0.6.3"
     },
     {
       "id": "fpm",
@@ -16,7 +16,7 @@
       "repository": "sloogy/FPM",
       "asset_pattern": "fpm_(?P<version>[0-9][0-9A-Za-z._-]*)_Windows_x86_64\\.lpmodule",
       "description": "Füller, Tinten, Federn, Papier, Rotation und Sammlungswissen.",
-      "requires_host": ">=0.6.2"
+      "requires_host": ">=0.6.3"
     },
     {
       "id": "freizeitmanager",
@@ -24,7 +24,7 @@
       "repository": "sloogy/Kontaktmanager",
       "asset_pattern": "freizeitmanager_(?P<version>[0-9][0-9A-Za-z._-]*)_Windows_x86_64\\.lpmodule",
       "description": "Freundschaftspflege, Kontaktrotation, Aktivitäten und Freizeitplanung.",
-      "requires_host": ">=0.6.2"
+      "requires_host": ">=0.6.3"
     }
   ]
 }
