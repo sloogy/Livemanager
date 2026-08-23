@@ -37,7 +37,10 @@ def _write_result(path: Path | None, *, success: bool, message: str, components:
     if path is None:
         return
     config = configparser.ConfigParser(interpolation=None)
-    config.optionxform = str
+    # Schluessel behalten ihre Schreibweise. mypy sieht eine
+    # Methodenzuweisung - richtig gesehen, aber genau so ist
+    # configparser dafuer gedacht.
+    config.optionxform = str  # type: ignore[method-assign,assignment]
     config["result"] = {
         "success": "1" if success else "0",
         "message": str(message).replace("\r", " ").replace("\n", " ").strip(),

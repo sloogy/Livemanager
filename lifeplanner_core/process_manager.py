@@ -8,6 +8,7 @@ import sys
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TextIO
 
 from . import APP_VERSION
 from .event_bus import FileEventBus, LifePlannerEvent
@@ -62,7 +63,9 @@ class ModuleLaunchError(RuntimeError):
 class RunningModule:
     manifest: ModuleManifest
     process: subprocess.Popen
-    log_handle: object
+    # Konkret typisiert: Auf einem ``object`` gibt es kein close(), und
+    # genau das wird hier aufgerufen.
+    log_handle: TextIO
     command: tuple[str, ...]
 
     @property

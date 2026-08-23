@@ -49,6 +49,13 @@ def core_checks() -> list[tuple[Path, list[str]]]:
         # Syntax-Klasse, waehrend lokal die globale Konfiguration des
         # Entwicklerrechners galt - beide sagten damit Verschiedenes.
         (ROOT, [sys.executable, "-m", "ruff", "check", "."]),
+        # Typpruefung seit Loop 57. Der Host startet Prozesse, installiert
+        # Module und prueft Signaturen - dort faellt ein Typfehler nicht
+        # als falsche Anzeige auf, sondern als abgebrochener Update-Lauf.
+        # Lokal bitte ueber tools/gepinnte_werkzeuge.py aufrufen: ohne
+        # PySide6 in der Umgebung sind alle Qt-Typen Any, und der Lauf waere
+        # gruen und wertlos.
+        (ROOT, [sys.executable, "-m", "mypy", "lifeplanner_core"]),
         (ROOT, [sys.executable, "tools/exception_audit.py"]),
         (ROOT, [sys.executable, "-m", "pytest", "-q", "tests"]),
     ]

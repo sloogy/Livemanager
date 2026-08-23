@@ -4,9 +4,8 @@ import logging
 from pathlib import Path
 
 from PySide6.QtCore import Qt, QTimer, QUrl
-from PySide6.QtGui import QDesktopServices, QFont
+from PySide6.QtGui import QDesktopServices, QFont, QGuiApplication
 from PySide6.QtWidgets import (
-    QApplication,
     QFrame,
     QGridLayout,
     QGroupBox,
@@ -416,10 +415,9 @@ class MainWindow(QMainWindow):
         Start - und genau dann hilft es niemandem. Der Host reicht das Profil
         anschließend an alle laufenden Module weiter.
         """
-        app = QApplication.instance()
-        if app is None:
-            return
-        signal = getattr(app.styleHints(), "colorSchemeChanged", None)
+        # styleHints() gehoert zu QGuiApplication und ist statisch - der
+        # Umweg ueber instance() war nur laenger, nicht sicherer.
+        signal = getattr(QGuiApplication.styleHints(), "colorSchemeChanged", None)
         if signal is None:  # Qt älter als 6.5
             return
         signal.connect(self._system_color_scheme_changed)
@@ -436,7 +434,7 @@ class MainWindow(QMainWindow):
         Umweg über die Fensterfarbe und liegt daneben, sobald ein Stylesheet
         oder ein Plattformthema dazwischenfunkt.
         """
-        hints = QApplication.instance().styleHints() if QApplication.instance() else None
+        hints = QGuiApplication.styleHints()
         scheme = getattr(hints, "colorScheme", None)
         if scheme is not None:
             value = scheme()

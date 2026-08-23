@@ -6,4 +6,12 @@ pytest-cov>=6.0,<8.0
 # geaendert hat - und weil der Lint-Lauf ueber Releases entscheidet, faellt
 # damit auch das Release aus. Anheben ist ein bewusster Commit.
 ruff==0.16.3
+# Exakt gepinnt aus demselben Grund wie ruff, und auf dieselbe Version
+# wie im BudgetManager: Eine neue Nebenversion urteilt anders, und dann
+# faellt ein Gate um, ohne dass sich eine Zeile Code geaendert hat.
+mypy==1.15.0
+# Die Stubs fuer requests. Ohne sie meldet mypy den fehlenden Stub als
+# Fehler - und mypy.ini kann das nur mit einer Ausnahme abfangen, die
+# dann auch echte Fehler in diesem Bereich verschluckt.
+types-requests==2.32.4.20250913
 pyinstaller==6.16.0

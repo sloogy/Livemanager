@@ -1,5 +1,31 @@
 # Changelog
 
+## Unveröffentlicht
+
+### Stabilität
+
+- **Der Host wird jetzt typgeprüft.** `mypy` lief nur im BudgetManager. Der
+  LifePlanner startet Prozesse, installiert Module und prüft Signaturen — dort
+  fällt ein Typfehler nicht als falsche Anzeige auf, sondern als abgebrochener
+  Update-Lauf.
+
+  Die Einführung kostete vier echte Funde, alle nach demselben Muster: Der Typ
+  war weiter als das, was damit gemacht wird. `log_handle: object` — und darauf
+  wurde `close()` aufgerufen. `value: object` — und daraus wurde ein Tupel
+  gebaut. Und zweimal `QApplication.instance().styleHints()`, wobei
+  `styleHints()` zu `QGuiApplication` gehört und statisch ist: Der Umweg über
+  `instance()` war länger, nicht sicherer.
+
+  Drei Ausnahmen bleiben, jede mit Begründung im Code: `ctypes.windll` gibt es
+  nur unter Windows, und `config.optionxform = str` ist die vorgesehene Art,
+  configparser die Schreibweise der Schlüssel behalten zu lassen.
+
+  `mypy` ist exakt auf 1.15.0 gepinnt, wie im BudgetManager, und läuft im
+  Release-Gate mit. Der Wrapper `tools/gepinnte_werkzeuge.py` kam mit —
+  einschliesslich der Lehre aus dem BudgetManager, dass er für mypy die
+  Projektabhängigkeiten mitbringen muss: Ohne PySide6 ist jeder Qt-Typ `Any`,
+  und der Lauf wäre grün und wertlos.
+
 ## 0.6.0 — 23. August 2026
 
 Das Dashboard zeigt jetzt, was die Module melden — überzogene Budgets, fällige

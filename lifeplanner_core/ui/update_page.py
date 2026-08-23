@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Iterable
 
 from PySide6.QtCore import QCoreApplication, Qt, QThread, QTimer, Signal
 from PySide6.QtGui import QFont
@@ -279,8 +280,8 @@ class UpdatePage(QWidget):
         self.stage_worker.finished.connect(self._worker_finished)
         self.stage_worker.start()
 
-    def _stage_succeeded(self, value: object) -> None:
-        staged = tuple(value)
+    def _stage_succeeded(self, value: Iterable[str]) -> None:
+        staged: tuple[str, ...] = tuple(value)
         try:
             self.host.process_manager.stop_all(profile_id=self.host.profile_id)
             plan_path = self.service.write_plan(staged, parent_pid=os.getpid())

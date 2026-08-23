@@ -66,7 +66,9 @@ def _lebt_windows(pid: int) -> bool:  # pragma: no cover - nur unter Windows
 
     SYNCHRONIZE = 0x00100000
     QUERY_LIMITED = 0x1000
-    kernel = ctypes.windll.kernel32
+    # windll gibt es nur unter Windows; der Aufrufer prueft die
+    # Plattform, bevor er hierher kommt.
+    kernel = ctypes.windll.kernel32  # type: ignore[attr-defined]
     handle = kernel.OpenProcess(SYNCHRONIZE | QUERY_LIMITED, False, pid)
     if not handle:
         return False

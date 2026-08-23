@@ -303,7 +303,10 @@ def query_catalog(sources: Iterable[ModuleSource], *, timeout: int = 20) -> tupl
 def write_catalog_ini(releases: Iterable[ModuleRelease], destination: Path | str) -> Path:
     items = tuple(releases)
     config = configparser.ConfigParser(interpolation=None)
-    config.optionxform = str
+    # Schluessel behalten ihre Schreibweise. mypy sieht eine
+    # Methodenzuweisung - richtig gesehen, aber genau so ist
+    # configparser dafuer gedacht.
+    config.optionxform = str  # type: ignore[method-assign,assignment]
     config["catalog"] = {
         "schema": "lifeplanner.installer-catalog.v1",
         "count": str(len(items)),
@@ -334,7 +337,10 @@ def write_catalog_ini(releases: Iterable[ModuleRelease], destination: Path | str
 
 def read_catalog_ini(path: Path | str) -> tuple[ModuleRelease, ...]:
     config = configparser.ConfigParser(interpolation=None)
-    config.optionxform = str
+    # Schluessel behalten ihre Schreibweise. mypy sieht eine
+    # Methodenzuweisung - richtig gesehen, aber genau so ist
+    # configparser dafuer gedacht.
+    config.optionxform = str  # type: ignore[method-assign,assignment]
     if not config.read(Path(path), encoding="utf-8"):
         raise InstallerCatalogError("Installer-Katalog fehlt.")
     if config.get("catalog", "schema", fallback="") != "lifeplanner.installer-catalog.v1":
