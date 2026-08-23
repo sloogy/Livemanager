@@ -71,11 +71,49 @@ def materialize_module_public_key(source: ResolvedModuleSource, *, signing: Rele
     if signing.unsigned:
         print(f"WARNUNG: {source.spec.name}: kein Public-Key im ausdrücklichen --allow-unsigned-Modus.")
         return
+    if not source.spec.eigener_updater:
+        # Kein eigener Updater, also auch nichts zu verankern. Steht so in der
+        # Lockdatei, damit es eine gepruefte Aussage ist und keine Vermutung.
+        print(f"HINWEIS: {source.spec.name}: kein eigener Updater, kein Update-Public-Key noetig.")
+        return
     helper = source.path / "tools" / "materialize_update_public_key.py"
-    if helper.is_file():
-        child_env = dict(os.environ)
-        child_env.setdefault("UPDATE_SIGNING_PUBLIC_KEY_B64", signing.public_key_b64)
-        run(sys.executable, str(helper), cwd=source.path, env=child_env)
+    if not helper.is_file():
+        # Schweigen hiess: Das Modul kommt ohne Vertrauensanker ins Release und
+        # ist ausgeliefert updateunfaehig. Das faellt erst dem Nutzer auf.
+        raise SystemExit(
+            f"{source.spec.name}: tools/materialize_update_public_key.py fehlt - "
+            "das Modul kaeme ohne Update-Public-Key ins Release."
+        )
+    child_env = dict(os.environ)
+    child_env.setdefault("UPDATE_SIGNING_PUBLIC_KEY_B64", signing.public_key_b64)
+    run(sys.executable, str(helper), cwd=source.path, env=child_env)
+
+
+def materialize_host_public_key(*, signing: ReleaseSigning) -> None:
+    """Den eigenen Vertrauensanker des Hosts in den Build legen.
+
+    Er fehlte: Materialisiert wurden nur die Schluessel der Module, und
+    ``LifePlanner.spec`` nimmt die Datei nur mit, *falls* es sie gibt. Der
+    gebaute Host hatte damit keinen Anker und lehnte fail-closed jedes Update
+    ab - "kein Key hinterlegt", ohne dass der Bau etwas gemeldet haette.
+
+    Im unsignierten Modus wird ein Anker aus einem frueheren Lauf ausdruecklich
+    entfernt: Ein Build, der einen fremden Schluessel mitschleppt, waere
+    schlimmer als einer ohne.
+    """
+    ziel = ROOT / "lifeplanner_core" / "resources" / "lifeplanner_update_public_key.b64"
+    if signing.unsigned:
+        ziel.unlink(missing_ok=True)
+        print("WARNUNG: LifePlanner-Core ohne Update-Public-Key (--allow-unsigned).")
+        return
+    run(
+        sys.executable,
+        str(ROOT / "tools" / "materialize_update_public_key.py"),
+        "--key",
+        signing.public_key_b64,
+    )
+    if not ziel.is_file():
+        raise RuntimeError(f"Update-Public-Key wurde nicht geschrieben: {ziel}")
 
 
 def build_update_assets(shell: Path, *, signing: ReleaseSigning) -> None:
@@ -186,6 +224,7 @@ def build(
     ordered = [sources[spec.module_id] for spec in load_lock()]
     for resolved in ordered:
         materialize_module_public_key(resolved, signing=signing)
+    materialize_host_public_key(signing=signing)
     for resolved in ordered:
         run(sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", resolved.spec.build_spec, cwd=resolved.path)
     run(sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", "LifePlanner.spec", cwd=ROOT)

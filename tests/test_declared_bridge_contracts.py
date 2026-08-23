@@ -30,7 +30,7 @@ def test_neue_modul_outbox_braucht_keinen_core_sonderfall(tmp_path, monkeypatch)
         version="0.1.10",
         description="",
         source_entry="main.py",
-        requires_host=">=0.5.15,<0.6",
+        requires_host=">=0.5.15,<1.0",
         schema="lifeplanner.module.v2",
         bridge_contracts=(
             BridgeContract(

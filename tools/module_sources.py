@@ -31,6 +31,12 @@ class ModuleSourceSpec:
     default_repository: str
     ref_variable: str
     default_ref: str
+    # Hat das Modul einen eigenen Updater, braucht es einen eingebetteten
+    # Update-Public-Key. Der FreizeitManager hat keinen - er wird
+    # ausschliesslich zentral aktualisiert. Das ist eine Eigenschaft des
+    # Moduls, also steht sie da, statt aus einer fehlenden Datei geraten zu
+    # werden.
+    eigener_updater: bool = True
 
 
 @dataclass(frozen=True)
@@ -88,6 +94,7 @@ def load_lock(path: Path = LOCK_PATH) -> tuple[ModuleSourceSpec, ...]:
                 default_repository=str(item.get("default_repository", "")).strip(),
                 ref_variable=str(item.get("ref_variable", "")).strip(),
                 default_ref=str(item.get("default_ref", "")).strip(),
+                eigener_updater=bool(item.get("eigener_updater", True)),
             )
         )
     return tuple(result)

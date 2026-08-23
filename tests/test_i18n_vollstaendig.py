@@ -141,3 +141,37 @@ def test_ein_unbekanntes_kuerzel_faellt_auf_deutsch_zurueck():
 def test_ein_unbekannter_schluessel_zerlegt_nichts():
     """Er soll auffallen, aber die Oberflaeche nicht zum Absturz bringen."""
     assert t("gibt.es.nicht") == "gibt.es.nicht"
+
+
+# ── Der gefrorene Build ─────────────────────────────────────────────────────
+
+def _spec_datas() -> list[tuple[str, str]]:
+    """Die ``datas``-Liste aus LifePlanner.spec, wirklich ausgewertet.
+
+    Eine Textsuche wuerde die Zeile finden und nicht ihr Ergebnis. Der Kopf der
+    Spec bis ``Analysis(`` kommt ohne PyInstaller-Globals aus - ausser
+    ``SPECPATH``, das hier gesetzt wird.
+    """
+    spec = (WURZEL / "LifePlanner.spec").read_text(encoding="utf-8")
+    kopf = spec.split("a = Analysis(", 1)[0]
+    raum: dict[str, object] = {"SPECPATH": str(WURZEL)}
+    exec(compile(kopf, "LifePlanner.spec", "exec"), raum)
+    return list(raum["datas"])  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize("sprache", sorted(SPRACHEN))
+def test_der_gefrorene_build_bringt_jede_sprachdatei_mit(sprache):
+    """Sie fehlten - und der Loader zeigte still den Schluessel statt des Textes.
+
+    In der portablen 0.6.1 war damit die ganze Oberflaeche unbeschriftet, ohne
+    dass etwas abstuerzte. Geprueft wird das Ziel mit: Liegt die Datei woanders
+    als neben ``lifeplanner_core/i18n/__init__.py``, findet der Loader sie nicht.
+    """
+    ziel = "lifeplanner_core/i18n"
+    dabei = [
+        quelle
+        for quelle, ordner in _spec_datas()
+        if ordner == ziel and Path(quelle).name == f"{sprache}.json"
+    ]
+    assert dabei, f"{sprache}.json fehlt in den datas von LifePlanner.spec"
+    assert Path(dabei[0]).is_file()

@@ -4,6 +4,7 @@ import json
 
 import pytest
 
+from lifeplanner_core import APP_VERSION
 from lifeplanner_core.manifest import BridgeContract, ManifestError, ModuleManifest
 from lifeplanner_core.process_manager import ModuleLaunchError, ModuleProcessManager
 
@@ -15,7 +16,7 @@ def _write_manifest(tmp_path, **overrides):
         "name": "Demo",
         "version": "1.0.0",
         "description": "Testmodul",
-        "requires_host": ">=0.5.15,<0.6",
+        "requires_host": ">=0.5.15,<1.0",
         "source_entry": "main.py",
         "permissions": ["own_data_read", "bridge_write"],
         "environment": {"LIFEPLANNER_BRIDGE_DIR": "{bridge_dir}"},
@@ -39,9 +40,13 @@ def _write_manifest(tmp_path, **overrides):
 def test_v2_manifest_persistiert_host_und_bridgevertrag(tmp_path):
     manifest = ModuleManifest.load(_write_manifest(tmp_path))
     assert manifest.schema == "lifeplanner.module.v2"
-    assert manifest.requires_host == ">=0.5.15,<0.6"
+    assert manifest.requires_host == ">=0.5.15,<1.0"
     assert manifest.host_compatible("0.5.15")
-    assert not manifest.host_compatible("0.6.0")
+    # Die Grenze ist das Manifest-Schema, nicht die Nebenversion des Hosts:
+    # Ein Sprung 0.5 -> 0.6 hat die gesamte Suite entkoppelt, obwohl sich am
+    # Vertrag nichts geaendert hatte. Ein neuer Vertrag heisst v3.
+    assert manifest.host_compatible(APP_VERSION)
+    assert not manifest.host_compatible("1.0.0")
     assert manifest.bridge_contracts == (
         BridgeContract(
             name="Demo Fokus",

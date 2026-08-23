@@ -11,6 +11,7 @@ Die in `module.json` deklarierten `permissions` sind ein **Vertrauens- und Infor
 - `lifeplanner.module.v1` bleibt lesbar, damit bereits installierte Module weiter funktionieren.
 - `lifeplanner.module.v2` ist für neue Releases vorgesehen und benötigt zusätzlich `requires_host`.
 - `requires_host` wird beim Installieren **und vor jedem Modulstart** gegen die aktuelle LifePlanner-Version geprüft. Ein späteres Host-Update kann damit ein inzwischen inkompatibles Modul nicht still weiter starten.
+- **Die Obergrenze gehört an das Manifest-Schema, nicht an die Nebenversion des Hosts.** Alle Module deklarierten einmal `<0.6`; der Sprung des Hosts von 0.5.15 auf 0.6.0 hat damit die gesamte Suite entkoppelt, obwohl sich am Vertrag nichts geändert hatte — installierte Module starteten nicht mehr, neue liessen sich nicht installieren. Eine echte Vertragsänderung heisst v3 (oder Host 1.0), und erst dann wandert die Grenze.
 
 Beispiel:
 
@@ -19,7 +20,7 @@ Beispiel:
   "schema": "lifeplanner.module.v2",
   "id": "freizeitmanager",
   "version": "0.1.10",
-  "requires_host": ">=0.5.15,<0.6"
+  "requires_host": ">=0.5.15,<1.0"
 }
 ```
 

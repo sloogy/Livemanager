@@ -15,7 +15,8 @@
       "build_spec": "BudgetManager.spec",
       "dist_directory": "dist/BudgetManager",
       "runtime_directory": "BudgetManager",
-      "description": "Budget, Buchungen, Forecasts, Sparziele und Monatsabschluss."
+      "description": "Budget, Buchungen, Forecasts, Sparziele und Monatsabschluss.",
+      "eigener_updater": true
     },
     {
       "id": "fpm",
@@ -30,7 +31,8 @@
       "build_spec": "FPM.spec",
       "dist_directory": "dist/FountainPenManager",
       "runtime_directory": "FountainPenManager",
-      "description": "Füller, Tinten, Federn, Papier, Rotation und Sammlungswissen."
+      "description": "Füller, Tinten, Federn, Papier, Rotation und Sammlungswissen.",
+      "eigener_updater": true
     },
     {
       "id": "freizeitmanager",
@@ -45,7 +47,8 @@
       "default_sibling": "../Kontaktmanager",
       "build_spec": "FreizeitManager.spec",
       "dist_directory": "dist/FreizeitManager",
-      "runtime_directory": "FreizeitManager"
+      "runtime_directory": "FreizeitManager",
+      "eigener_updater": false
     }
   ]
 }
