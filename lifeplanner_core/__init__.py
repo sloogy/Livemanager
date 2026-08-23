@@ -1,4 +1,4 @@
 """LifePlanner core package."""
 
 APP_NAME = "LifePlanner"
-APP_VERSION = "0.5.15"
+APP_VERSION = "0.6.0"

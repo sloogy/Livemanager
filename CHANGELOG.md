@@ -1,6 +1,12 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.6.0 — 23. August 2026
+
+Das Dashboard zeigt jetzt, was die Module melden — überzogene Budgets, fällige
+Reinigungen, die nächsten Kontaktvorschläge. Bisher sah der Host nur, ob ein
+Modul läuft; was darin schieflief, sah nur, wer das Modul öffnete.
+
+Modulstände: BudgetManager 2.3.0, FPM 1.3.0, FreizeitManager 0.2.0.
 
 ### Funktion
 

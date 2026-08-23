@@ -122,3 +122,31 @@ def test_github_env_lines_reject_line_breaks():
     zeilen = github_env_lines()
     assert all(zeile.count("=") >= 1 and "\n" not in zeile for zeile in zeilen)
     assert f"LOCK_{spec.ref_variable}={spec.default_ref}" in zeilen
+
+
+def test_readme_nennt_die_modulversionen_der_lockdatei() -> None:
+    """Das README beschreibt, was ein Release baut - dann soll es stimmen.
+
+    Bis Loop 50 nannte die Beispielliste `budgetmanager_2.2.63`,
+    `fpm_1.0.3` und `freizeitmanager_0.1.1` - fuenf Staende alt. Wer wissen
+    wollte, was der naechste Release enthaelt, las eine Zahl von vor Monaten.
+    `sync_version.py` zieht nur die Reihe des Hosts nach, nicht die
+    Modulversionen; deshalb faellt es sonst niemandem auf.
+    """
+    import json
+    import re
+    from pathlib import Path
+
+    wurzel = Path(__file__).resolve().parents[1]
+    lock = json.loads(
+        (wurzel / "dependencies" / "modules.lock.json").read_text(encoding="utf-8")
+    )
+    readme = (wurzel / "README.md").read_text(encoding="utf-8")
+
+    for modul in lock["modules"]:
+        genannt = set(re.findall(rf"{modul['id']}_(\d+\.\d+\.\d+)_", readme))
+        veraltet = genannt - {modul["version"]}
+        assert not veraltet, (
+            f"README nennt fuer {modul['id']} die Version(en) "
+            f"{sorted(veraltet)}, die Lockdatei sagt {modul['version']}"
+        )
