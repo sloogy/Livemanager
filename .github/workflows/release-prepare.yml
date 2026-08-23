@@ -42,7 +42,7 @@ jobs:
           echo "TAG=$TAG" >> "$GITHUB_ENV"
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
           python - "$VERSION" <<'PY'
-          import json, re, sys
+          import re, sys
           from pathlib import Path
 
           version = sys.argv[1]
@@ -59,69 +59,62 @@ jobs:
               raise SystemExit('APP_VERSION nicht eindeutig gefunden')
           core.write_text(source, encoding='utf-8')
 
-          lock_path = Path('dependencies/modules.lock.json')
-          lock = json.loads(lock_path.read_text(encoding='utf-8'))
-          wanted = {
-              'budgetmanager': ('2.2.72', 'v2.2.72'),
-              'fpm': ('1.2.3', 'v1.2.3'),
-              'freizeitmanager': ('0.1.12', 'v0.1.12'),
-          }
-          for module in lock['modules']:
-              if module['id'] in wanted:
-                  module['version'], module['default_ref'] = wanted[module['id']]
-          lock_path.write_text(
-              json.dumps(lock, ensure_ascii=False, indent=2) + '\n', encoding='utf-8'
-          )
-
-          workflow = Path('.github/workflows/release.yml')
-          text = workflow.read_text(encoding='utf-8')
-          replacements = (
-              (
-                  r"(repository:\s*\$\{\{ vars\.BUDGETMANAGER_REPOSITORY[^\n]*\}\}\s*\n\s*ref:)\s*[^\n]+",
-                  r"\1 'v2.2.72'",
-              ),
-              (
-                  r"(repository:\s*\$\{\{ vars\.FPM_REPOSITORY[^\n]*\}\}\s*\n\s*ref:)\s*[^\n]+",
-                  r"\1 'v1.2.3'",
-              ),
-              (
-                  r"(repository:\s*\$\{\{ vars\.FREIZEITMANAGER_REPOSITORY[^\n]*\}\}\s*\n\s*ref:)\s*[^\n]+",
-                  r"\1 'v0.1.12'",
-              ),
-          )
-          for pattern, replacement in replacements:
-              text, count = re.subn(pattern, replacement, text)
-              if count < 2:
-                  raise SystemExit(
-                      f'Release-Ref nicht in Windows+Linux gefunden: {pattern} ({count})'
-                  )
-          workflow.write_text(text, encoding='utf-8')
+          # Die Lockdatei bleibt unangetastet: Sie ist die Quelle, und
+          # release.yml liest die Refs zur Laufzeit ueber die LOCK_*-Variablen
+          # aus tools/module_sources.py.
+          #
+          # Hier stand bis hierher eine feste Liste - budgetmanager 2.2.72,
+          # fpm 1.2.3, freizeitmanager 0.1.12 - die die Lockdatei bei jedem
+          # Release ueberschrieb. Ein Modulstand, den jemand in der Lockdatei
+          # hob, war nach dem naechsten Release wieder auf 2.2.72 zurueck.
+          # Danach ersetzte der Block feste ref:-Zeilen in release.yml, die es
+          # dort seit test_module_sources.py::
+          # test_release_workflow_carries_no_versions gar nicht mehr gibt: Der
+          # Lauf brach mit "Release-Ref nicht in Windows+Linux gefunden" ab.
+          # Beides zusammen hiess, dass der Host sich nicht releasen liess.
           PY
           python tools/sync_version.py
           python tools/sync_version.py --check
 
-      - name: Modul-Tags und grüne Full-Releases müssen existieren
+      - name: Modul-Tags und veröffentlichte Releases müssen existieren
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
-          for spec in \
-            'sloogy/Budgetmanager:v2.2.72' \
-            'sloogy/FPM:v1.2.3' \
-            'sloogy/Kontaktmanager:v0.1.12'
-          do
-            repo="${spec%%:*}"
-            ref="${spec#*:}"
-            gh api "repos/${repo}/git/ref/tags/${ref}" >/dev/null
-          done
+          # Die Modulliste kommt aus der Lockdatei, nicht aus einer zweiten
+          # festen Liste. Hier standen v2.2.72, v1.2.3 und v0.1.12 samt der
+          # Triggerbranches, auf denen ihre .release-status-Datei lag. Die
+          # Liste veraltete unabhaengig von der Lockdatei, und Triggerbranches
+          # werden aufgeraeumt - die Pruefung haette einen gepflegten
+          # Modulstand abgelehnt, weil ein Branch von damals fehlt.
+          #
+          # Geprueft wird jetzt, was zaehlt und bleibt: Traegt das Modul den
+          # Tag, und haengt daran ein veroeffentlichtes Release mit Assets?
+          # Ein Release ohne Assets ist fuer den Host wertlos - er laedt
+          # genau die .lpmodule-Pakete.
+          python - <<'PY' > "${RUNNER_TEMP}/module_specs.txt"
+          import json
+          from pathlib import Path
 
-          gh api 'repos/sloogy/Budgetmanager/contents/.release-status/v2.2.72.ok?ref=release-trigger/v2.2.72-r4' \
-            --jq '.content' | base64 -d | grep -Fx 'status=success'
-          gh api 'repos/sloogy/FPM/contents/.release-status/v1.2.3.ok?ref=release-trigger/v1.2.3' \
-            --jq '.content' | base64 -d | grep -Fx 'status=success'
-          gh api 'repos/sloogy/Kontaktmanager/contents/.release-status/v0.1.12.ok?ref=release-trigger/v0.1.12' \
-            --jq '.content' | base64 -d | grep -Fx 'status=success'
+          lock = json.loads(
+              Path('dependencies/modules.lock.json').read_text(encoding='utf-8')
+          )
+          for module in lock['modules']:
+              print(module['default_repository'], module['default_ref'])
+          PY
+
+          while read -r repo ref; do
+            [ -n "$repo" ] || continue
+            echo "Pruefe ${repo} ${ref}"
+            gh api "repos/${repo}/git/ref/tags/${ref}" >/dev/null
+            anzahl="$(gh release view "$ref" --repo "$repo" --json assets --jq '.assets | length')"
+            if [ "$anzahl" -lt 1 ]; then
+              echo "Release ${repo} ${ref} hat keine Assets" >&2
+              exit 1
+            fi
+            echo "  Tag und Release vorhanden, ${anzahl} Assets"
+          done < "${RUNNER_TEMP}/module_specs.txt"
 
       - name: Release-Validierung ohne Modulbuild
         run: python tools/validate_release.py
