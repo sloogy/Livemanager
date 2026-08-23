@@ -1,5 +1,51 @@
 # Changelog
 
+## 0.6.2 — 23. August 2026
+
+Der Host baute sich selbst ohne Sprachdateien und ohne Update-Vertrauensanker
+— beides fiel nie auf, weil im Quellbaum alles stimmte. Dazu die Hostgrenze,
+die kein Modul mehr starten liess.
+
+Modulstände: BudgetManager 2.4.1, FPM 1.4.1, FreizeitManager 0.2.2.
+
+### Stabilität
+
+- **Die Beschriftungen fehlten nur im gefrorenen Build.** `LifePlanner.spec`
+  nahm Public Key und Themes mit, aber nicht die Sprachdateien;
+  `lifeplanner_core/i18n` liest sie über `Path(__file__).parent`. Der Loader
+  fängt das ab und gibt dann den *Schlüssel* zurück — die portable Oberfläche
+  war komplett unbeschriftet, ohne dass etwas abstürzte.
+
+  Im Quellbaum war alles richtig, darum fiel es nie auf. `FPM.spec` hatte es
+  längst. Gelesen wird jetzt das Verzeichnis statt einer abgeschriebenen
+  Sprachliste.
+
+- **Der Host hatte nie einen Update-Vertrauensanker.**
+  `materialize_module_public_key` lief nur über die Modulquellen; für den Host
+  selbst gab es keinen Aufruf, und die Spec nimmt die Datei nur mit, *falls* es
+  sie gibt. Der ausgelieferte Host lehnte damit fail-closed jedes Update ab
+  („kein Key hinterlegt"), und kein Bau hat je etwas gemeldet.
+
+  Dazu deckte `if helper.is_file()` zu, dass ein Modul ohne Materialisier-Tool
+  updateunfähig ins Release käme; das bricht den Bau jetzt ab. Der
+  FreizeitManager ist die einzige echte Ausnahme — er hat gar keinen eigenen
+  Updater. Das steht jetzt als `eigener_updater: false` in der Lockdatei, statt
+  aus einer fehlenden Datei geraten zu werden.
+
+### Modul-Host-Vertrag
+
+- **Kein Modul startete mehr.** Alle drei deklarierten
+  `requires_host: ">=0.5.15,<0.6"`, der Host steht seit 0.6.0 darüber. Die
+  Module waren installiert und aktuell, sie durften nur nicht starten:
+  `requires_host` wird laut Vertrag vor jedem Modulstart geprüft. Der
+  Minor-Sprung 0.5 → 0.6 hat damit die ganze Suite entkoppelt, ohne dass sich
+  am Vertrag etwas geändert hätte.
+
+  Die Obergrenze gehört an das Manifest-Schema, nicht an die Nebenversion des
+  Hosts. Sie steht jetzt auf `>=0.5.15,<1.0` — in allen drei `module.json`, in
+  den Tests der vier Repositories und begründet im Vertragsdokument. Ein neuer
+  Vertrag heisst v3.
+
 ## 0.6.1 — 23. August 2026
 
 Der Host wird jetzt typgeprüft — vier echte Funde brachte die Einführung.
