@@ -3,22 +3,23 @@
 ## 0.6.3 — 23. August 2026
 
 Der Host verteilte weiterhin BudgetManager 2.4.1, obwohl das Modul inzwischen
-bei 3.0.0 stand. Wer den Host installierte, bekam ein Modul, das fünf Stände
+bei 3.0.5 steht. Wer den Host installierte, bekam ein Modul, das zehn Stände
 alt war.
 
-Modulstände: BudgetManager 3.0.0, FPM 1.4.1, FreizeitManager 0.2.2.
+Modulstände: BudgetManager 3.0.5, FPM 1.4.1, FreizeitManager 0.2.2.
 
 ### Modulstände
 
-- **BudgetManager 2.4.1 → 3.0.0.** `dependencies/modules.lock.json` pinnt Ref
+- **BudgetManager 2.4.1 → 3.0.5.** `dependencies/modules.lock.json` pinnt Ref
   und Version, die der Releaseworkflow auscheckt und baut; beide standen noch
-  auf `v2.4.1`. Der Vertrag bleibt unberührt: `module.json` in v3.0.0 führt
+  auf `v2.4.1`. Der Vertrag bleibt unberührt: `module.json` in v3.0.5 führt
   `requires_host: >=0.5.15,<1.0` und dieselben drei Bridge-Kanäle wie 2.4.1,
   der Host erfüllt das mit 0.6.3.
 
-  Nicht auf `v3.0.1` gepinnt: Dieser Tag existiert zwar, sein Release-Bau ist
-  aber an der i18n-Prüfung gescheitert, und es gibt kein veröffentlichtes
-  Release dazu. 3.0.0 ist der neueste Stand mit Artefakten.
+  3.0.1 bis 3.0.4 kamen nicht in Frage: Diese Tags existieren, aber keiner
+  wurde je veröffentlicht — der Release-Lauf hob jedes Mal die Version und
+  entwertete damit den Auditnachweis, den seine eigene Testsuite verlangt.
+  3.0.5 ist der erste Stand seit 3.0.0 mit Artefakten.
 
 ## 0.6.2 — 23. August 2026
 
