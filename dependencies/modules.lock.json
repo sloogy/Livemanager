@@ -5,10 +5,10 @@
     {
       "id": "budgetmanager",
       "name": "BudgetManager",
-      "version": "3.0.7",
+      "version": "3.0.8",
       "default_repository": "sloogy/Budgetmanager",
       "repository_variable": "BUDGETMANAGER_REPOSITORY",
-      "default_ref": "v3.0.7",
+      "default_ref": "v3.0.8",
       "ref_variable": "BUDGETMANAGER_REF",
       "source_environment": "LIFEPLANNER_BUDGETMANAGER_SOURCE",
       "default_sibling": "../Budgetmanager",
