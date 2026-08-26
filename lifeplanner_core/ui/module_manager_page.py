@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from PySide6.QtCore import QCoreApplication, Qt, QThread, QTimer, Signal
+from PySide6.QtCore import QCoreApplication, QSize, Qt, QThread, QTimer, Signal
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -32,6 +32,11 @@ from ..module_installer import ModuleInstallerService, ModulePackageInfo
 from ..paths import data_root, module_data_dir, modules_dir
 from ..plugin_loader import discover_modules
 from ..updater.service import UpdateService
+from .icons import modul_icon
+
+# Kantenlaenge des Modulbildes in den beiden Tabellen. Ohne die passende
+# Zeilenhoehe schneidet Qt das Symbol auf die Texthoehe zurecht.
+TABELLEN_ICON = 24
 
 _PERMISSION_LABELS = {
     "own_data_read": "eigene Daten lesen",
@@ -158,6 +163,7 @@ class ModuleManagerPage(QWidget):
         gh_header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         for column in (2, 3, 4):
             gh_header.setSectionResizeMode(column, QHeaderView.ResizeMode.ResizeToContents)
+        self.github_table.setIconSize(QSize(TABELLEN_ICON, TABELLEN_ICON))
         self.github_table.setMaximumHeight(150)
         root.addWidget(self.github_table)
 
@@ -168,6 +174,7 @@ class ModuleManagerPage(QWidget):
         self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.table.verticalHeader().setVisible(False)
         self.table.itemSelectionChanged.connect(self._update_selection_buttons)
+        self.table.setIconSize(QSize(TABELLEN_ICON, TABELLEN_ICON))
         header = self.table.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         for column in (1, 2, 3, 4):
@@ -206,6 +213,7 @@ class ModuleManagerPage(QWidget):
         self.table.setRowCount(len(modules))
         for row, manifest in enumerate(modules):
             name_item = QTableWidgetItem(manifest.name)
+            name_item.setIcon(modul_icon(manifest.module_id))
             name_item.setData(Qt.ItemDataRole.UserRole, manifest.module_id)
             self.table.setItem(row, 0, name_item)
             self.table.setItem(row, 1, QTableWidgetItem(manifest.version))
@@ -257,7 +265,9 @@ class ModuleManagerPage(QWidget):
         installed = {module.module_id: module.version for module in self.load_result.modules}
         self.github_table.setRowCount(len(releases))
         for row, release in enumerate(releases):
-            self.github_table.setItem(row, 0, QTableWidgetItem(release.name))
+            name_item = QTableWidgetItem(release.name)
+            name_item.setIcon(modul_icon(release.module_id))
+            self.github_table.setItem(row, 0, name_item)
             self.github_table.setItem(row, 1, QTableWidgetItem(release.repository))
             self.github_table.setItem(row, 2, QTableWidgetItem(installed.get(release.module_id, "–")))
             online_text = release.version if release.available else (release.error or "nicht verfügbar")

@@ -28,6 +28,27 @@ i18n = root / "lifeplanner_core" / "i18n"
 for datei in sorted(i18n.glob("*.json")):
     datas.append((str(datei), "lifeplanner_core/i18n"))
 
+# Die Programmbilder. lifeplanner_core/branding.py sucht sie unter "icons"
+# neben der ausfuehrbaren Datei beziehungsweise im Entpackverzeichnis - der
+# Zielordner heisst deshalb genauso. Auch hier wird der Ordner gelesen und
+# keine Dateiliste abgeschrieben: Ein viertes Modul bringt sein Bild mit,
+# ohne dass jemand diese Datei anfassen muss. Die unskalierten Quellen unter
+# "original" bleiben draussen - sie gehoeren zu tools/generate_icons.py, nicht
+# in den Betrieb, und wuerden das Paket um zwei Megabyte aufblaehen.
+icons = root / "lifeplanner_core" / "resources" / "icons"
+if icons.is_dir():
+    for datei in sorted(icons.glob("*.png")) + sorted(icons.glob("*.ico")):
+        datas.append((str(datei), "icons"))
+    for datei in sorted((icons / "modules").glob("*.png")):
+        datas.append((str(datei), "icons/modules"))
+else:
+    print("WARNUNG: LifePlanner.spec: keine Programmbilder - dieser Build laeuft ohne Symbole.")
+
+# Das Symbol der ausfuehrbaren Datei selbst. PyInstaller nimmt None als
+# "kein Symbol" - ein Entwickler-Build ohne Bilder bricht deshalb nicht ab.
+ico = icons / "lifeplanner.ico"
+icon_datei = str(ico) if ico.is_file() else None
+
 a = Analysis(
     [str(root / "main.py")],
     pathex=[str(root)],
@@ -52,6 +73,7 @@ exe = EXE(
     strip=False,
     upx=True,
     console=False,
+    icon=icon_datei,
 )
 coll = COLLECT(
     exe,

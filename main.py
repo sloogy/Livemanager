@@ -56,6 +56,13 @@ def main() -> int:
     app.setApplicationVersion(APP_VERSION)
     app.setOrganizationName("LifePlanner")
 
+    # Auf der Anwendung, nicht erst auf dem Hauptfenster: Die Meldung ueber
+    # eine bereits laufende Instanz erscheint weiter unten ohne Elternfenster
+    # und truege sonst das Ersatzsymbol des Fenstermanagers.
+    from lifeplanner_core.ui.icons import app_icon
+
+    app.setWindowIcon(app_icon())
+
     # Nur eine Instanz je Datenordner. Zwei Hosts wuerden dieselben Module
     # starten und in denselben Brueckenordner schreiben - die Module haetten
     # dann zwei Eltern, und beim Update wuerde einer dem anderen die Dateien

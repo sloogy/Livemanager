@@ -1,8 +1,13 @@
 #define MyAppName "LifePlanner"
 #define MyAppVersion "0.6.3"
 #define MyAppExeName "LifePlanner.exe"
+; Erzeugt von tools/generate_icons.py aus dem unskalierten Quellbild, mit
+; allen Aufloesungen bis 256 in einer Datei. Ohne SetupIconFile traegt der
+; Setup das Standardsymbol von Inno Setup - dasselbe wie jedes andere Setup.
+#define MyAppIcon "..\lifeplanner_core\resources\icons\lifeplanner.ico"
 
 [Setup]
+SetupIconFile={#MyAppIcon}
 AppId={{4DF6574B-6A23-4B55-8D2C-7B71A84CC1AC}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}

@@ -22,7 +22,7 @@ from __future__ import annotations
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction, QKeySequence
-from PySide6.QtWidgets import QMenuBar
+from PySide6.QtWidgets import QMenuBar, QSizePolicy
 
 from ..i18n import t
 
@@ -140,22 +140,61 @@ def _vollbild(fenster, an: bool) -> None:
 
 
 def _ueber_zeigen(fenster) -> None:
-    """Version, Profil und Datenordner.
+    _ueber_dialog(fenster).exec()
+
+
+def _ueber_dialog(fenster):
+    """Version, Profil und Datenordner - gebaut, aber noch nicht gezeigt.
 
     Welches Profil gerade gilt, stand bisher nur klein in der Einleitung der
-    Übersichtsseite - und der Datenordner gar nicht.
+    Übersichtsseite - und der Datenordner gar nicht. Getrennt vom ``exec()``,
+    damit ein Test den fertigen Dialog ansehen kann, ohne dass er die Suite
+    modal anhaelt.
     """
     from PySide6.QtWidgets import QMessageBox
 
     from .. import APP_VERSION
     from ..paths import data_root
+    from .icons import logo_pixmap
 
-    QMessageBox.information(
-        fenster,
-        t("menu.about_title"),
+    dialog = QMessageBox(fenster)
+    dialog.setWindowTitle(t("menu.about_title"))
+    dialog.setText(
         f"LifePlanner {APP_VERSION}\n\n"
         f"{t('menu.about_profile')} {fenster.profile_id}\n"
-        f"{t('menu.about_data')} {data_root()}",
+        f"{t('menu.about_data')} {data_root()}"
+    )
+    # Das Banner statt des Informations-i: Der Ueber-Dialog ist die eine
+    # Stelle, an der das Programm sich vorstellt. Fehlt die Bilddatei,
+    # bleibt es beim Standardsymbol - der Dialog erscheint so oder so.
+    banner = logo_pixmap(220, 66)
+    if banner is not None:
+        dialog.setIconPixmap(banner)
+        _mindestbreite(dialog, 560)
+    else:
+        dialog.setIcon(QMessageBox.Icon.Information)
+    return dialog
+
+
+def _mindestbreite(dialog, breite: int) -> None:
+    """Verhindert, dass das Banner den Text in eine schmale Spalte draengt.
+
+    QMessageBox bemisst seine Breite am Symbol plus Text und ignoriert
+    ``setMinimumWidth``. Ein leerer Platzhalter in der letzten Zeile seines
+    Rasters ist der einzige Weg, der ohne einen eigenen Dialog auskommt -
+    sonst faellt der Datenordner in einen Umbruch je Wortsilbe.
+    """
+    from PySide6.QtWidgets import QGridLayout, QSpacerItem
+
+    raster = dialog.layout()
+    if not isinstance(raster, QGridLayout):
+        return
+    raster.addItem(
+        QSpacerItem(breite, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding),
+        raster.rowCount(),
+        0,
+        1,
+        raster.columnCount(),
     )
 
 

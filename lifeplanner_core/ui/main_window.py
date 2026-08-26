@@ -37,6 +37,7 @@ from ..repositories import BUDGETMANAGER_REPOSITORY, CORE_REPOSITORY, FPM_REPOSI
 from ..settings import SettingsStore
 from ..theme import SYSTEM_THEME, ThemeCatalog, build_stylesheet, publish_shared_theme, publish_theme
 from .appearance_page import AppearancePage
+from .icons import app_icon, logo_pixmap, modul_icon
 from .module_manager_page import ModuleManagerPage
 from .update_page import UpdatePage
 
@@ -45,6 +46,15 @@ logger = logging.getLogger(__name__)
 # Mehr Zeilen liest niemand, und die Modulkacheln sollen sichtbar
 # bleiben. Was nicht passt, zaehlt die Zeile darunter.
 MELDUNGEN_SICHTBAR = 6
+
+# Kantenlaenge des Modulbildes auf einer Kachel. Gross genug, dass das
+# Symbol in der Krone erkennbar bleibt, klein genug, dass Titel, Version und
+# Beschreibung daneben die Kachel bestimmen.
+KACHEL_ICON = 48
+
+# Hoehe des Logo-Banners im Kopf der Uebersichtsseite. Die Breite ergibt
+# sich aus dem Seitenverhaeltnis - das Banner wird nie verzerrt.
+KOPF_LOGO_HOEHE = 56
 
 
 class ModuleCard(QFrame):
@@ -60,8 +70,24 @@ class ModuleCard(QFrame):
         font.setPointSize(14)
         font.setBold(True)
         title.setFont(font)
-        layout.addWidget(title)
-        layout.addWidget(QLabel(f"Version {manifest.version}"))
+
+        # Bild links, Name und Version rechts. modul_icon liefert immer ein
+        # anzeigbares Symbol - fehlt das Bild, steht dort das neutrale
+        # Standardsymbol, und die Kachel bleibt vollstaendig.
+        kopf = QHBoxLayout()
+        bild = QLabel()
+        bild.setFixedSize(KACHEL_ICON, KACHEL_ICON)
+        bild.setPixmap(modul_icon(manifest.module_id).pixmap(KACHEL_ICON, KACHEL_ICON))
+        bild.setScaledContents(False)
+        bild.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        kopf.addWidget(bild)
+        beschriftung = QVBoxLayout()
+        beschriftung.setSpacing(2)
+        beschriftung.addWidget(title)
+        beschriftung.addWidget(QLabel(f"Version {manifest.version}"))
+        kopf.addLayout(beschriftung, 1)
+        layout.addLayout(kopf)
+
         desc = QLabel(manifest.description)
         desc.setWordWrap(True)
         layout.addWidget(desc)
@@ -108,6 +134,10 @@ class MainWindow(QMainWindow):
         self.load_result = load_result
         self.cards: dict[str, ModuleCard] = {}
         self.setWindowTitle("LifePlanner")
+        # Auch am Fenster, nicht nur an der Anwendung: Wer den Host aus einem
+        # Test oder einem eigenen Skript heraus baut, hat kein
+        # setWindowIcon auf der QApplication gesetzt.
+        self.setWindowIcon(app_icon())
         self.resize(1120, 720)
         self.setMinimumSize(900, 600)
         self._build_ui(load_result)
@@ -181,6 +211,9 @@ class MainWindow(QMainWindow):
         page = QWidget()
         layout = QVBoxLayout(page)
         layout.setContentsMargins(28, 24, 28, 24)
+        logo = self._logo_zeile()
+        if logo is not None:
+            layout.addWidget(logo)
         layout.addLayout(self._header(t("haupt.start_titel"), t("haupt.start_einleitung", profil=self.profile_id)))
         layout.addWidget(self._meldungsbereich())
         scroll = QScrollArea()
@@ -198,6 +231,30 @@ class MainWindow(QMainWindow):
         scroll.setWidget(content)
         layout.addWidget(scroll, 1)
         return page
+
+    def _logo_zeile(self) -> QWidget | None:
+        """Das Logo-Banner ueber der Startseite - oder nichts.
+
+        Der Host zeigt sich hier selbst, ueber den Kacheln der Module. Fehlt
+        die Bilddatei, gibt es keine leere Zeile und keinen Platzhalter: die
+        Seite beginnt dann wie bisher mit der Ueberschrift.
+
+        Die Breitenschranke ist absichtlich grosszuegig - ``KeepAspectRatio``
+        entscheidet, welche der beiden Kanten am Ende bindet, und das ist bei
+        einem Banner von 3:1 immer die Hoehe.
+        """
+        bild = logo_pixmap(KOPF_LOGO_HOEHE * 6, KOPF_LOGO_HOEHE)
+        if bild is None:
+            return None
+        zeile = QLabel()
+        zeile.setPixmap(bild)
+        zeile.setFixedHeight(bild.height())
+        zeile.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        # Damit kein Layout auf die Idee kommt, das Banner zu dehnen.
+        zeile.setScaledContents(False)
+        zeile.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        zeile.setAccessibleName("LifePlanner")
+        return zeile
 
     def _meldungsbereich(self) -> QWidget:
         """Was die Module gerade melden - ueber den Modulkacheln.

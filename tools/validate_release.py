@@ -35,6 +35,7 @@ def core_checks() -> list[tuple[Path, list[str]]]:
                 "tools/build_module_package.py",
                 "tools/module_sources.py",
                 "tools/prepare_dev_modules.py",
+                "tools/generate_icons.py",
                 "lifeplanner_core/installer_catalog.py",
                 "lifeplanner_core/installer_bootstrap.py",
             ],
