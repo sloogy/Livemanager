@@ -1,5 +1,84 @@
 # Changelog
 
+## 0.6.4 — 27. August 2026
+
+Die Programmbilder waren richtig ausgewählt, aber falsch aufbereitet: Das
+Logo saß schief, auf dunklen Designprofilen fehlte die Hälfte des
+Schriftzugs, und zwischen Doppelklick und Hauptfenster stand nichts auf dem
+Bildschirm. Alle drei Module bringen dieselbe Arbeit mit.
+
+Modulstände: BudgetManager 3.0.9, FPM 1.4.3, FreizeitManager 0.2.4.
+
+### Das Logo saß schief und wirkte zu klein
+
+Die gelieferten Bilddateien tragen ungleiche durchsichtige Ränder — beim
+Banner 69 Bildpunkte links und 42 rechts, 66 oben und 84 unten. Bis hierher
+wurden sie unverändert verkleinert. Die Folge war kein fehlendes Bild,
+sondern etwas Unauffälligeres: ein Logo, das in einer Fläche fester Höhe zu
+klein wirkt und sichtbar aus der Mitte rutscht — auf der Startseite und im
+Über-Dialog. Und ein Modulsymbol mit schiefem Rand hing in der Kachelreihe
+neben den anderen sichtbar daneben.
+
+- **Das Banner wird jetzt randlos zugeschnitten.**
+- **Programmsymbol und Modulsymbole sitzen mittig**, mit gleichem Rand auf
+  allen vier Seiten.
+
+Dass das bisher niemandem auffiel, hat einen Grund: Über jedem Blatt liegt
+ein Schleier mit Alphawerten von 1 bis 3 — unsichtbar, aber für eine
+Randmessung gegen Null deckend. Ein Zuschnitt auf „Alpha größer als Null"
+hätte gar nichts weggeschnitten.
+
+### Auf dunklen Designprofilen fehlte das halbe Wort
+
+Der Schriftzug ist zur Hälfte dunkelblau; die Fensterfarben der dunklen
+Profile gehen bis `#1e1e1e`. Dort stand auf der Startseite nur noch
+„Planner". Es gibt jetzt eine zweite, helle Fassung des Banners.
+
+Ausgewählt wird sie am aufgelösten Designprofil und nicht an den Farben des
+Schreibtischs: Der Host setzt ein Stylesheet und nie eine Qt-Palette, ein
+dunkler Schreibtisch mit hellem Profil ergäbe sonst die falsche Fassung.
+Beim Wechsel des Profils wird das Banner aktiv ausgetauscht — es ist ein Bild
+und kein Text, ein Stylesheet erreicht es nicht.
+
+### Der Start zeigt nicht mehr nichts
+
+Zwischen Doppelklick und Hauptfenster durchsucht der Host die Modulordner,
+liest jedes Manifest, prüft die Modulstände und baut für jedes eine Kachel.
+Bis dahin stand nichts auf dem Bildschirm — wer nichts sieht, klickt ein
+zweites Mal, und die Sperre gegen die zweite Instanz greift erst danach.
+
+Jetzt erscheint sofort ein Startbildschirm mit dem Logo. Er weicht jedem
+Hinweis aus, den der Start zeigen will — etwa der Warnung über übersprungene
+Module — und verschwindet mit dem Hauptfenster.
+
+### Ein Absturz beim Schließen
+
+Hat der Host keine Modulliste, fragt die Modulseite kurz nach dem Aufbau den
+GitHub-Katalog ab: in einem eigenen Thread, mit zwanzig Sekunden Zeitgrenze.
+Wer den Host in dieser Zeit schloss, räumte den Thread mit ab — Qt beendete
+das Programm dann hart, nach dem Schließen, wenn niemand mehr hinsieht.
+
+Das Schließen trennt die Abfrage jetzt sauber ab, statt auf sie zu warten
+(das hätte das Schließen bis zu zwanzig Sekunden aufgehalten) oder sie
+abzuräumen. Dasselbe gilt für Paketprüfung und Download.
+
+### Modulstände
+
+- **BudgetManager 3.0.8 → 3.0.9**, **FPM 1.4.1 → 1.4.3**,
+  **FreizeitManager 0.2.2 → 0.2.4.** Alle drei bringen dieselbe
+  Marken-Arbeit mit: eigenes Programmsymbol, Logo in der Oberfläche,
+  Startbildschirm und eine lesbare Fassung für dunkle Profile. FPM lässt
+  außerdem die Einträge seiner Seitenleiste rollen — sie passten bei
+  Mindestfenstergröße nicht mehr hinein.
+- **FPM 1.4.2 und FreizeitManager 0.2.3 wurden nie ausgeliefert.** Beide
+  Release-Läufe brachen ab, nachdem der Tag schon stand, und zwar jeweils an
+  einer Prüfung, die nur im Release-Lauf greift: beim FreizeitManager an
+  einem Handbuch, das der Vorlauf nach dem Versionssprung nicht neu baute,
+  bei FPM an einem i18n-Audit, der eine deutsche Protokollzeile für
+  unübersetzten Oberflächentext hielt. Ein Tag wird nicht verschoben,
+  deshalb tragen die Stände die nächsthöhere Nummer. Beide Ursachen sind in
+  den jeweiligen Repositories behoben.
+
 ## 0.6.3 — 23. August 2026
 
 Der Host verteilte weiterhin BudgetManager 2.4.1, obwohl das Modul inzwischen
