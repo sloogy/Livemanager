@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.6.5 — 27. August 2026
+
+Modulstände: BudgetManager 3.1.1, FPM 1.4.3, FreizeitManager 0.2.4.
+
+### Modulstände
+
+- **BudgetManager 3.0.9 → 3.1.1.** Der Bankimport friert während der Analyse
+  nicht mehr ein, zeigt einen ehrlichen Fortschritt über mehrere Dateien und
+  lässt sich abbrechen. Wichtiger als das: Zwei stille Fehler sind behoben —
+  ab der zweiten Datei war der Import nicht mehr atomar (bei einem Fehler
+  blieben Buchungen ohne Importvermerk stehen, für die Duplikaterkennung
+  unsichtbar), und ein Import von 1000 Buchungen sperrte die Oberfläche 44
+  Sekunden statt 0,4. Einzelheiten in den Release-Notizen des Moduls.
+- **BudgetManager 3.1.0 wurde nie ausgeliefert.** Der Release-Bau brach ab,
+  nachdem der Tag schon stand: Das Werkzeug, das die Versionsnummern in der
+  Dokumentation nachzieht, war blind für den Wechsel der Versionsreihe und
+  meldete trotzdem „synchron". Ein Tag wird nicht verschoben, deshalb trägt
+  derselbe Stand die Nummer 3.1.1. Die Ursache ist im Modul behoben.
+
 ## 0.6.4 — 27. August 2026
 
 Die Programmbilder waren richtig ausgewählt, aber falsch aufbereitet: Das
