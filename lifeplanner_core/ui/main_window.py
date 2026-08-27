@@ -486,6 +486,14 @@ class MainWindow(QMainWindow):
     # Gross geschrieben, weil Qt den Namen so aufruft - kein Tippfehler.
     def closeEvent(self, event) -> None:
         self.process_manager.stop_all(profile_id=self.profile_id)
+        # Der Statuszaehler und die Hintergrundabfragen muessen mit dem
+        # Fenster enden. Der Katalog laeuft in einem eigenen Thread und fragt
+        # GitHub; wer den Host waehrend dieser Abfrage schliesst, zerstoerte
+        # bisher einen laufenden QThread - Qt bricht das Programm dann mit
+        # "QThread: Destroyed while thread is still running" ab, und zwar
+        # nach dem Schliessen, wenn niemand mehr hinsieht.
+        self.timer.stop()
+        self.module_manager_page.laufende_abfragen_loesen()
         super().closeEvent(event)
 
     def _watch_system_color_scheme(self) -> None:

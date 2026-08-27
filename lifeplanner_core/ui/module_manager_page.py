@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import warnings
 from pathlib import Path
 
 from PySide6.QtCore import QCoreApplication, QSize, Qt, QThread, QTimer, Signal
@@ -62,6 +63,12 @@ class _InspectPackageWorker(QThread):
             self.succeeded.emit(self.service.inspect_package(self.path))
         except Exception as exc:
             self.failed.emit(str(exc))
+
+
+#: Arbeiter, deren Fenster schon zu ist und deren Thread noch laeuft.
+#: Sie muessen bis zu ihrem Ende am Leben bleiben - siehe
+#: :meth:`ModuleManagerPage.laufende_abfragen_loesen`.
+_ABGELOESTE_ARBEITER: set[QThread] = set()
 
 
 class _CatalogWorker(QThread):
@@ -242,6 +249,47 @@ class ModuleManagerPage(QWidget):
         self.catalog_worker.failed.connect(self._catalog_failed)
         self.catalog_worker.finished.connect(self._catalog_finished)
         self.catalog_worker.start()
+
+    def laufende_abfragen_loesen(self) -> None:
+        """Loest laufende Hintergrundabfragen vom Fenster.
+
+        Aufgerufen beim Schliessen des Hauptfensters. Eine laufende
+        HTTP-Anfrage laesst sich nicht sauber abbrechen, und auf sie zu warten
+        hiesse, das Schliessen bis zu zwanzig Sekunden aufzuhalten - so lange
+        darf die Katalogabfrage dauern.
+
+        Stattdessen werden die Ergebnissignale getrennt - niemand soll mehr in
+        eine Oberflaeche schreiben, die es nicht mehr gibt - und der Arbeiter
+        wandert nach :data:`_ABGELOESTE_ARBEITER`. Sonst raeumt Python ihn
+        mit der Seite ab, waehrend sein Thread noch laeuft; Qt bricht das
+        Programm dann mit "QThread: Destroyed while thread is still running"
+        ab. Nach dem Ende traegt er sich selbst wieder aus.
+        """
+        for name in ("catalog_worker", "inspect_worker", "download_worker"):
+            arbeiter = getattr(self, name, None)
+            setattr(self, name, None)
+            if arbeiter is None:
+                continue
+            try:
+                if not arbeiter.isRunning():
+                    continue
+                for signal in (arbeiter.succeeded, arbeiter.failed, arbeiter.finished):
+                    # PySide6 meldet ein Trennen ohne Verbindung als
+                    # RuntimeWarning statt als Ausnahme. Hier ist das kein
+                    # Befund: Nicht jeder Arbeiter haengt an allen dreien.
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore", RuntimeWarning)
+                        try:
+                            signal.disconnect()
+                        except (RuntimeError, TypeError):
+                            pass
+                _ABGELOESTE_ARBEITER.add(arbeiter)
+                arbeiter.finished.connect(
+                    lambda a=arbeiter: _ABGELOESTE_ARBEITER.discard(a)
+                )
+            except RuntimeError:
+                # Bereits abgeraeumt - dann gibt es auch nichts zu loesen.
+                pass
 
     def _catalog_finished(self) -> None:
         self.github_button.setEnabled(True)

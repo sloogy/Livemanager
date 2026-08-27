@@ -504,7 +504,10 @@ def test_das_banner_folgt_dem_designprofil(qapp, tmp_path, monkeypatch) -> None:
     from lifeplanner_core.settings import SettingsStore
     from lifeplanner_core.ui.main_window import MainWindow
 
-    fenster = MainWindow(PluginLoadResult(modules=[], errors=[]), SettingsStore())
+    # Mit Modulen, nicht ohne: Eine leere Modulliste laesst die Modulseite
+    # 350 ms spaeter den GitHub-Katalog abfragen - eine echte Netzanfrage in
+    # einem eigenen Thread, die in einem Testlauf nichts zu suchen hat.
+    fenster = MainWindow(PluginLoadResult(modules=tuple(_manifeste()), errors=()), SettingsStore())
     try:
         zeile = fenster._logo_label
         assert zeile is not None, "die Startseite zeigt kein Banner"
@@ -512,8 +515,11 @@ def test_das_banner_folgt_dem_designprofil(qapp, tmp_path, monkeypatch) -> None:
         def helligkeit() -> float:
             bild = zeile.pixmap().toImage()
             summe = anzahl = 0.0
-            for y in range(bild.height()):
-                for x in range(bild.width()):
+            # Jeder vierte Bildpunkt genuegt: Gemessen wird ein Mittelwert
+            # ueber Zehntausende, und der Test soll nicht sekundenlang
+            # rechnen.
+            for y in range(0, bild.height(), 4):
+                for x in range(0, bild.width(), 4):
                     farbe = bild.pixelColor(x, y)
                     if farbe.alpha() > ALPHA_SCHWELLE:
                         summe += farbe.lightnessF()
@@ -532,7 +538,6 @@ def test_das_banner_folgt_dem_designprofil(qapp, tmp_path, monkeypatch) -> None:
         assert auf_dunkel > auf_hell + 0.15
     finally:
         fenster.close()
-        fenster.deleteLater()
 
 
 def test_der_startbildschirm_ueberbrueckt_und_verschwindet(qapp) -> None:
@@ -595,6 +600,48 @@ def test_der_startbildschirm_laesst_sich_ohne_referenz_schliessen(qapp) -> None:
     splash.close()
     splash.finish(None)
     assert StartupSplash._active is None
+
+
+def test_schliessen_zerstoert_keine_laufende_katalogabfrage(qapp, tmp_path, monkeypatch) -> None:
+    """Wer den Host waehrend der GitHub-Abfrage schliesst, darf keinen Absturz sehen.
+
+    Die Abfrage laeuft in einem eigenen Thread und darf bis zu zwanzig
+    Sekunden dauern; auf sie zu warten hiesse, das Schliessen so lange
+    aufzuhalten. Wird sie dagegen mit der Seite abgeraeumt, bricht Qt das
+    Programm mit "QThread: Destroyed while thread is still running" ab - nach
+    dem Schliessen, wenn niemand mehr hinsieht.
+    """
+    monkeypatch.setenv("LIFEPLANNER_DATA_DIR", str(tmp_path / "daten"))
+    from PySide6.QtCore import QThread
+
+    from lifeplanner_core.plugin_loader import PluginLoadResult
+    from lifeplanner_core.settings import SettingsStore
+    from lifeplanner_core.ui import module_manager_page as seite
+    from lifeplanner_core.ui.main_window import MainWindow
+
+    fenster = MainWindow(PluginLoadResult(modules=tuple(_manifeste()), errors=()), SettingsStore())
+    arbeiter = seite._CatalogWorker()
+    # Nicht die echte Abfrage: Der Test braucht einen Thread, der beim
+    # Schliessen noch laeuft, und keinen Netzzugriff.
+    monkeypatch.setattr(type(arbeiter), "run", lambda self: QThread.msleep(400))
+    getroffen: list[object] = []
+    arbeiter.finished.connect(getroffen.append)
+    fenster.module_manager_page.catalog_worker = arbeiter
+    arbeiter.start()
+    try:
+        fenster.close()
+
+        assert fenster.module_manager_page.catalog_worker is None
+        assert arbeiter in seite._ABGELOESTE_ARBEITER, (
+            "der Arbeiter haengt an nichts mehr und wird mit der Seite abgeraeumt"
+        )
+        assert arbeiter.wait(5000), "der Thread ist nicht zu Ende gekommen"
+        qapp.processEvents()
+        assert arbeiter not in seite._ABGELOESTE_ARBEITER, "er traegt sich nicht aus"
+        assert getroffen == [], "die Ergebnissignale wurden nicht getrennt"
+    finally:
+        arbeiter.wait(5000)
+        seite._ABGELOESTE_ARBEITER.discard(arbeiter)
 
 
 def test_der_windows_installer_bringt_sein_eigenes_symbol_mit() -> None:
