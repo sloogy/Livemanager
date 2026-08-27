@@ -167,13 +167,30 @@ def _ueber_dialog(fenster):
     # Das Banner statt des Informations-i: Der Ueber-Dialog ist die eine
     # Stelle, an der das Programm sich vorstellt. Fehlt die Bilddatei,
     # bleibt es beim Standardsymbol - der Dialog erscheint so oder so.
-    banner = logo_pixmap(220, 66)
+    banner = logo_pixmap(220, 66, fuer_dunklen_untergrund=_dialogflaeche_ist_dunkel(fenster))
     if banner is not None:
         dialog.setIconPixmap(banner)
         _mindestbreite(dialog, 560)
     else:
         dialog.setIcon(QMessageBox.Icon.Information)
     return dialog
+
+
+def _dialogflaeche_ist_dunkel(fenster) -> bool:
+    """Ob der Ueber-Dialog auf einer dunklen Flaeche liegt.
+
+    Der Dialog erbt das Stylesheet seines Elternfensters, also entscheidet
+    dessen Profil - nicht die Qt-Palette. Kennt das Fenster kein Profil,
+    etwa in einem Test mit einer Attrappe, gilt hell: Das ist die Fassung,
+    die es immer gibt.
+    """
+    profil = getattr(fenster, "_aktives_profil", None)
+    if profil is None:
+        return False
+    try:
+        return bool(profil().is_dark)
+    except (AttributeError, OSError, RuntimeError, TypeError, ValueError):
+        return False
 
 
 def _mindestbreite(dialog, breite: int) -> None:

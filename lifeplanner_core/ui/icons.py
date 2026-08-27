@@ -34,14 +34,20 @@ def app_icon() -> QIcon:
     return symbol
 
 
-def logo_pixmap(breite: int, hoehe: int) -> QPixmap | None:
+def logo_pixmap(
+    breite: int, hoehe: int, *, fuer_dunklen_untergrund: bool = False
+) -> QPixmap | None:
     """Das Banner, in eine Flaeche eingepasst - oder ``None``.
 
     Eingepasst heisst: Seitenverhaeltnis erhalten und glatt skaliert. Das
-    Banner ist dreimal so breit wie hoch; in eine quadratische Flaeche
-    gezwungen waere die Schrift unleserlich.
+    Banner ist mehr als viermal so breit wie hoch; in eine quadratische
+    Flaeche gezwungen waere die Schrift unleserlich.
+
+    ``fuer_dunklen_untergrund`` waehlt die Fassung. Die Aufrufstelle muss
+    das wissen, weil nur sie weiss, auf welcher Flaeche das Banner landet -
+    die Startseite traegt eine andere Farbe als ein Dialog.
     """
-    pfad = branding.logo_pfad()
+    pfad = branding.logo_pfad(fuer_dunklen_untergrund=fuer_dunklen_untergrund)
     if pfad is None:
         return None
     bild = QPixmap(str(pfad))

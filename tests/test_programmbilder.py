@@ -14,6 +14,14 @@ daran verbindlich ist - und zwar am Verhalten, nicht am Quelltext:
   und den Starter nicht abbrechen - das ist die Eigenschaft, die zaehlt.
 * Das Banner behaelt sein Seitenverhaeltnis. In eine quadratische Flaeche
   gequetscht waere die Schrift darin unleserlich.
+* Die ausgelieferten Bilder sind randlos zugeschnitten und die Symbole sitzen
+  mittig. Die Bildmappe der Suite liefert ungleiche unsichtbare Raender; ein
+  Banner mit Rand wirkt in einer Flaeche fester Hoehe zu klein und rutscht
+  aus der Mitte, ein Modulsymbol mit schiefem Rand haengt in der Kachelreihe
+  neben den anderen sichtbar daneben.
+* Es gibt eine Bannerfassung fuer dunkle Flaechen. Der Schriftzug ist zur
+  Haelfte dunkelblau; auf den dunklen Profilen waere das halbe Wort weg.
+* Der Startbildschirm ueberbrueckt die Modulsuche und ist danach wieder weg.
 
 Die Bildmasse werden aus den Dateikoepfen gelesen, nicht mit Pillow: Pillow
 gehoert zur Bildpflege (``tools/generate_icons.py``) und steht bewusst nicht
@@ -67,6 +75,49 @@ def _ico_masse(pfad: Path) -> list[tuple[int, int]]:
     return masse
 
 
+#: Dieselbe Schwelle wie in tools/generate_icons.py: Die Marken-PNGs der
+#: Bildmappe tragen einen unsichtbaren Alphaschleier, der jede Randmessung
+#: gegen Null wertlos macht.
+ALPHA_SCHWELLE = 8
+
+
+def _motiv_rahmen(pfad: Path) -> tuple[int, int, int, int]:
+    """Rahmen um alles Sichtbare: links, oben, rechts, unten (exklusiv)."""
+    from PySide6.QtGui import QImage
+
+    bild = QImage(str(pfad))
+    assert not bild.isNull(), f"{pfad.name} laesst sich nicht laden"
+    links, oben = bild.width(), bild.height()
+    rechts = unten = 0
+    for y in range(bild.height()):
+        for x in range(bild.width()):
+            if bild.pixelColor(x, y).alpha() > ALPHA_SCHWELLE:
+                links = min(links, x)
+                oben = min(oben, y)
+                rechts = max(rechts, x + 1)
+                unten = max(unten, y + 1)
+    assert rechts > links and unten > oben, f"{pfad.name} ist vollstaendig unsichtbar"
+    return links, oben, rechts, unten
+
+
+def _mittlere_helligkeit(pfad: Path) -> float:
+    """Durchschnittliche Helligkeit aller sichtbaren Bildpunkte, 0.0 bis 1.0."""
+    from PySide6.QtGui import QImage
+
+    bild = QImage(str(pfad))
+    assert not bild.isNull(), f"{pfad.name} laesst sich nicht laden"
+    summe = 0.0
+    gezaehlt = 0
+    for y in range(bild.height()):
+        for x in range(bild.width()):
+            farbe = bild.pixelColor(x, y)
+            if farbe.alpha() > ALPHA_SCHWELLE:
+                summe += farbe.lightnessF()
+                gezaehlt += 1
+    assert gezaehlt, f"{pfad.name} ist vollstaendig unsichtbar"
+    return summe / gezaehlt
+
+
 def _modul_ids() -> list[str]:
     daten = json.loads(LOCK.read_text(encoding="utf-8"))
     return [modul["id"] for modul in daten["modules"]]
@@ -115,6 +166,62 @@ def test_das_quellbild_ist_groesser_als_jede_ableitung() -> None:
     assert breite >= max(branding.APP_ICON_GROESSEN), (
         f"{breite}px Quelle fuer bis zu {max(branding.APP_ICON_GROESSEN)}px - hochskaliert"
     )
+
+
+def test_das_banner_hat_keinen_unsichtbaren_rand(qapp) -> None:
+    """Randlos, sonst passt es in keine Flaeche.
+
+    Die Quelldatei traegt 69 Bildpunkte links und 42 rechts, 66 oben und 84
+    unten. Wer ein solches Bild in eine Flaeche fester Hoehe legt, bekommt ein
+    Logo, das zu klein wirkt und sichtbar aus der Mitte rutscht - obwohl das
+    Layout korrekt zentriert.
+    """
+    pfad = branding.logo_pfad()
+    assert pfad is not None
+    breite, hoehe = _png_masse(pfad)
+    assert _motiv_rahmen(pfad) == (0, 0, breite, hoehe)
+
+
+@pytest.mark.parametrize("groesse", (128, 256, 512))
+def test_das_programmsymbol_sitzt_mittig(qapp, groesse: int) -> None:
+    """Gleicher Rand links wie rechts und oben wie unten.
+
+    Das Quellbild ist unsymmetrisch beschnitten. Unkorrigiert haengt das
+    Symbol in Taskleiste und Titelleiste schief - sichtbar erst neben
+    anderen Symbolen.
+    """
+    links, oben, rechts, unten = _motiv_rahmen(ICONS / f"lifeplanner-{groesse}.png")
+    # Eine ungerade Restbreite laesst sich nicht gleichmaessig verteilen,
+    # deshalb ein Bildpunkt Spielraum.
+    assert abs(links - (groesse - rechts)) <= 1, f"{groesse}px sitzt waagerecht schief"
+    assert abs(oben - (groesse - unten)) <= 1, f"{groesse}px sitzt senkrecht schief"
+
+
+@pytest.mark.parametrize("modul_id", _modul_ids())
+def test_jedes_modulsymbol_sitzt_mittig(qapp, modul_id: str) -> None:
+    """Sonst haengt eine Kachel in der Reihe sichtbar neben den anderen."""
+    pfad = branding.modul_icon_pfad(modul_id)
+    assert pfad is not None, modul_id
+    breite, hoehe = _png_masse(pfad)
+    links, oben, rechts, unten = _motiv_rahmen(pfad)
+    assert abs(links - (breite - rechts)) <= 1, f"{modul_id} sitzt waagerecht schief"
+    assert abs(oben - (hoehe - unten)) <= 1, f"{modul_id} sitzt senkrecht schief"
+
+
+def test_es_gibt_eine_bannerfassung_fuer_dunkle_flaechen(qapp) -> None:
+    """Auf dunklen Profilen muss das ganze Wort lesbar bleiben.
+
+    Der Schriftzug ist zur Haelfte dunkelblau (#0D1B3A); die Fensterfarben
+    der dunklen Profile gehen bis #1e1e1e. Der Test vergleicht die mittlere
+    Helligkeit beider Fassungen - die helle muss deutlich heller sein, sonst
+    ist sie nur eine Kopie.
+    """
+    hell = branding.logo_pfad(fuer_dunklen_untergrund=True)
+    dunkel = branding.logo_pfad(fuer_dunklen_untergrund=False)
+    assert hell is not None and dunkel is not None
+    assert hell != dunkel, "ohne eigene Fassung ist das Logo dort halb weg"
+    assert _png_masse(hell) == _png_masse(dunkel), "dieselbe Zeichnung"
+    assert _mittlere_helligkeit(hell) > _mittlere_helligkeit(dunkel) + 0.15
 
 
 # --- Zuordnung Modul zu Bild --------------------------------------------
@@ -193,7 +300,7 @@ def test_das_banner_behaelt_sein_seitenverhaeltnis(qapp) -> None:
     quelle = _png_masse(branding.logo_pfad())
     verhaeltnis = quelle[0] / quelle[1]
     # Absichtlich eine quadratische Flaeche: Wer KeepAspectRatio vergisst,
-    # bekommt hier 1.0 statt der 3 der Quelle.
+    # bekommt hier 1.0 statt des Seitenverhaeltnisses der Quelle.
     bild = logo_pixmap(240, 240)
     assert bild is not None
     assert bild.width() / bild.height() == pytest.approx(verhaeltnis, rel=0.02)
@@ -360,6 +467,7 @@ def test_die_spec_packt_die_bilder_in_den_ordner_den_der_host_durchsucht() -> No
     ziele = {Path(quelle).name: ordner for quelle, ordner in datas}
     assert ziele.get("lifeplanner.ico") == "icons"
     assert ziele.get(branding.LOGO_DATEI) == "icons"
+    assert ziele.get(branding.LOGO_HELL_DATEI) == "icons"
     for groesse in branding.APP_ICON_GROESSEN:
         assert ziele.get(f"lifeplanner-{groesse}.png") == "icons"
     for modul_id in _modul_ids():
@@ -379,6 +487,114 @@ def test_die_ausfuehrbaren_dateien_tragen_das_symbol(spec: str) -> None:
     text = (WURZEL / spec).read_text(encoding="utf-8")
     assert "icon=icon_datei" in text, f"{spec}: EXE ohne Symbol"
     assert "lifeplanner.ico" in text, f"{spec}: kein Weg zur Symboldatei"
+
+
+# --- Bannerfassung und Startbildschirm ----------------------------------
+
+
+def test_das_banner_folgt_dem_designprofil(qapp, tmp_path, monkeypatch) -> None:
+    """Beim Wechsel auf ein dunkles Profil muss das Banner mitwechseln.
+
+    Es ist ein Bild und kein Text - ein Stylesheet erreicht es nicht. Ohne
+    das Auffrischen bliebe die dunkelblaue Haelfte des Schriftzugs stehen und
+    verschwaende auf der dunklen Flaeche.
+    """
+    monkeypatch.setenv("LIFEPLANNER_DATA_DIR", str(tmp_path / "daten"))
+    from lifeplanner_core.plugin_loader import PluginLoadResult
+    from lifeplanner_core.settings import SettingsStore
+    from lifeplanner_core.ui.main_window import MainWindow
+
+    fenster = MainWindow(PluginLoadResult(modules=[], errors=[]), SettingsStore())
+    try:
+        zeile = fenster._logo_label
+        assert zeile is not None, "die Startseite zeigt kein Banner"
+
+        def helligkeit() -> float:
+            bild = zeile.pixmap().toImage()
+            summe = anzahl = 0.0
+            for y in range(bild.height()):
+                for x in range(bild.width()):
+                    farbe = bild.pixelColor(x, y)
+                    if farbe.alpha() > ALPHA_SCHWELLE:
+                        summe += farbe.lightnessF()
+                        anzahl += 1
+            assert anzahl
+            return summe / anzahl
+
+        fenster.settings.set("theme", "Standard - Hell")
+        fenster.apply_theme()
+        auf_hell = helligkeit()
+
+        fenster.settings.set("theme", "Standard - Dunkel")
+        fenster.apply_theme()
+        auf_dunkel = helligkeit()
+
+        assert auf_dunkel > auf_hell + 0.15
+    finally:
+        fenster.close()
+        fenster.deleteLater()
+
+
+def test_der_startbildschirm_ueberbrueckt_und_verschwindet(qapp) -> None:
+    """Zwischen Start und Hauptfenster durchsucht der Host die Modulordner."""
+    from PySide6.QtWidgets import QWidget
+
+    from lifeplanner_core.ui.startup_splash import StartupSplash
+
+    splash = StartupSplash.start(qapp)
+    try:
+        assert splash.is_visible()
+
+        fenster = QWidget()
+        fenster.show()
+        splash.finish(fenster)
+
+        assert not splash.is_visible()
+        assert splash.widget() is None
+        assert StartupSplash._active is None
+        fenster.close()
+    finally:
+        StartupSplash.close_active()
+
+
+def test_der_startbildschirm_weicht_einem_modalen_dialog(qapp) -> None:
+    """Sonst klebt er ueber der Warnung zu uebersprungenen Modulen."""
+    from PySide6.QtCore import QTimer
+    from PySide6.QtWidgets import QDialog
+
+    from lifeplanner_core.ui.startup_splash import StartupSplash
+
+    splash = StartupSplash.start(qapp)
+    try:
+        assert splash.is_visible()
+
+        sichtbar: list[bool] = []
+        dialog = QDialog()
+        QTimer.singleShot(
+            0, lambda: (sichtbar.append(splash.is_visible()), dialog.accept())
+        )
+        dialog.exec()
+        qapp.processEvents()
+
+        assert sichtbar == [False]
+        assert splash.is_visible(), "danach soll er das Laden weiter ueberbruecken"
+    finally:
+        StartupSplash.close_active()
+
+
+def test_der_startbildschirm_laesst_sich_ohne_referenz_schliessen(qapp) -> None:
+    """Der Notausgang in main.py haelt keine Referenz auf den Splash."""
+    from lifeplanner_core.ui.startup_splash import StartupSplash
+
+    splash = StartupSplash.start(qapp)
+    StartupSplash.close_active()
+    assert not splash.is_visible()
+
+    # Idempotent: ein zweiter Aufruf darf nicht scheitern.
+    StartupSplash.close_active()
+    splash.close()
+    splash.finish(None)
+    assert StartupSplash._active is None
 
 
 def test_der_windows_installer_bringt_sein_eigenes_symbol_mit() -> None:

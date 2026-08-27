@@ -32,8 +32,8 @@ def main() -> int:
         if args.diagnostics:
             print(payload)
         return 0
-    result = discover_modules()
     if args.list_modules:
+        result = discover_modules()
         for module in result.modules:
             print(f"{module.module_id}\t{module.version}\t{module.name}")
         for error in result.errors:
@@ -79,13 +79,36 @@ def main() -> int:
         return 0
     app.aboutToQuit.connect(guard.release)
 
-    settings = SettingsStore()
     package = args.install_module or args.module_package
     if package is not None and package.suffix.lower() not in {".lpmodule", ".zip"}:
         print(f"Kein unterstütztes Modulpaket: {package}", file=sys.stderr)
         return 3
-    window = MainWindow(result, settings, module_package=package)
-    window.show()
+
+    # Startbildschirm: ueberbrueckt die Modulsuche und den Aufbau des
+    # Hauptfensters. Der Host durchsucht dabei die Modulordner, liest jedes
+    # Manifest und baut fuer jedes eine Kachel - bis hierhin stand nichts auf
+    # dem Bildschirm.
+    #
+    # Die Modulsuche ist deshalb hinter die QApplication gerueckt. Sie
+    # braucht kein Qt, aber sie ist der langsame Teil des Starts, und vor der
+    # QApplication laesst sich nichts anzeigen. Der Zweig --list-modules sucht
+    # weiterhin ohne Oberflaeche.
+    from lifeplanner_core.ui.startup_splash import StartupSplash
+
+    splash = StartupSplash.start(app)
+    try:
+        result = discover_modules()
+        settings = SettingsStore()
+        window = MainWindow(result, settings, module_package=package)
+        window.show()
+        splash.finish(window)
+    finally:
+        # finish() hat den Splash im Regelfall schon geschlossen. Dieser
+        # Aufruf faengt den Abbruch davor ab. Bliebe der Splash stehen, saehe
+        # der Nutzer ein Bild ohne Programm dahinter, und bis der Watchdog
+        # zuschlaegt vergehen dreissig Sekunden.
+        StartupSplash.close_active()
+
     if result.errors:
         QMessageBox.warning(window, "Einige Module wurden übersprungen", "\n".join(result.errors))
     return app.exec()

@@ -26,8 +26,13 @@ from pathlib import Path
 #: ``tools/generate_icons.py`` schreibt genau diese.
 APP_ICON_GROESSEN: tuple[int, ...] = (16, 32, 48, 64, 128, 256, 512)
 
-#: Dateiname des Banners in Bildschirmgroesse.
+#: Dateiname des Banners in Bildschirmgroesse, fuer helle Flaechen.
 LOGO_DATEI = "lifeplanner-logo-512.png"
+
+#: Dieselbe Zeichnung fuer dunkle Flaechen. Der Schriftzug ist zur Haelfte
+#: dunkelblau; auf den dunklen Profilen - Fensterfarben bis #1e1e1e - waere
+#: genau dieses halbe Wort weg.
+LOGO_HELL_DATEI = "lifeplanner-logo-hell-512.png"
 
 #: Dateiname der Windows-Symboldatei mit mehreren Aufloesungen.
 ICO_DATEI = "lifeplanner.ico"
@@ -74,8 +79,16 @@ def app_ico_pfad() -> Path | None:
     return pfad if pfad.is_file() else None
 
 
-def logo_pfad() -> Path | None:
-    """Das breite Logo-Banner, mit dem sich der Host selbst zeigt."""
+def logo_pfad(*, fuer_dunklen_untergrund: bool = False) -> Path | None:
+    """Das breite Logo-Banner in der Fassung fuer diesen Untergrund.
+
+    Fehlt die helle Fassung, kommt die dunkle zurueck: ein schwer lesbares
+    Banner ist immer noch besser als eine leere Flaeche.
+    """
+    if fuer_dunklen_untergrund:
+        hell = icons_dir() / LOGO_HELL_DATEI
+        if hell.is_file():
+            return hell
     pfad = icons_dir() / LOGO_DATEI
     return pfad if pfad.is_file() else None
 
@@ -111,6 +124,7 @@ def bekannte_modul_icons() -> dict[str, Path]:
 
 __all__ = [
     "APP_ICON_GROESSEN",
+    "LOGO_HELL_DATEI",
     "app_ico_pfad",
     "app_icon_pfade",
     "bekannte_modul_icons",

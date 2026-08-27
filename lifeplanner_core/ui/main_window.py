@@ -211,9 +211,9 @@ class MainWindow(QMainWindow):
         page = QWidget()
         layout = QVBoxLayout(page)
         layout.setContentsMargins(28, 24, 28, 24)
-        logo = self._logo_zeile()
-        if logo is not None:
-            layout.addWidget(logo)
+        self._logo_label = self._logo_zeile()
+        if self._logo_label is not None:
+            layout.addWidget(self._logo_label)
         layout.addLayout(self._header(t("haupt.start_titel"), t("haupt.start_einleitung", profil=self.profile_id)))
         layout.addWidget(self._meldungsbereich())
         scroll = QScrollArea()
@@ -241,9 +241,9 @@ class MainWindow(QMainWindow):
 
         Die Breitenschranke ist absichtlich grosszuegig - ``KeepAspectRatio``
         entscheidet, welche der beiden Kanten am Ende bindet, und das ist bei
-        einem Banner von 3:1 immer die Hoehe.
+        einem Banner von mehr als 4:1 immer die Hoehe.
         """
-        bild = logo_pixmap(KOPF_LOGO_HOEHE * 6, KOPF_LOGO_HOEHE)
+        bild = self._logo_bild()
         if bild is None:
             return None
         zeile = QLabel()
@@ -255,6 +255,29 @@ class MainWindow(QMainWindow):
         zeile.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         zeile.setAccessibleName("LifePlanner")
         return zeile
+
+    def _logo_bild(self):
+        """Das Banner in der Fassung, die zur Startseite passt.
+
+        Der Schriftzug ist zur Haelfte dunkelblau. Auf einem dunklen Profil -
+        die Fensterfarben gehen bis #1e1e1e - waere genau dieses halbe Wort
+        weg. Massgeblich ist das aufgeloeste Profil und nicht die Qt-Palette:
+        Der Host setzt ein Stylesheet und nie eine Palette, ein dunkler
+        Schreibtisch mit hellem Profil ergaebe sonst die falsche Fassung.
+        """
+        return logo_pixmap(
+            KOPF_LOGO_HOEHE * 6,
+            KOPF_LOGO_HOEHE,
+            fuer_dunklen_untergrund=self._aktives_profil().is_dark,
+        )
+
+    def _aktives_profil(self):
+        """Das gerade angewendete Designprofil des Hosts."""
+        return self.theme_catalog.resolve(
+            self.settings.theme,
+            dark_hint=self.prefers_dark(),
+            system_pair=self.settings.system_theme_pair,
+        )
 
     def _meldungsbereich(self) -> QWidget:
         """Was die Module gerade melden - ueber den Modulkacheln.
@@ -504,11 +527,13 @@ class MainWindow(QMainWindow):
 
     def apply_theme(self) -> None:
         """Wendet das gewählte Profil auf den Host an und stellt es Modulen bereit."""
-        profile = self.theme_catalog.resolve(
-            self.settings.theme, dark_hint=self.prefers_dark(),
-            system_pair=self.settings.system_theme_pair)
+        profile = self._aktives_profil()
         self.process_manager.prefers_dark = self.prefers_dark()
         self.setStyleSheet(build_stylesheet(profile))
+        # Das Banner muss mitwechseln. Es ist ein Bild und kein Text - ein
+        # Stylesheet erreicht es nicht, und die dunkelblaue Haelfte des
+        # Schriftzugs verschwaende sonst beim Wechsel auf ein dunkles Profil.
+        self._logo_auffrischen()
         font = self.font()
         font.setPointSize(profile.font_size)
         self.setFont(font)
@@ -524,3 +549,18 @@ class MainWindow(QMainWindow):
                 publish_shared_theme(self.profile_id, profile)
         except OSError as exc:
             logger.warning("Designprofil nicht schreibbar: %s", exc)
+
+    def _logo_auffrischen(self) -> None:
+        """Setzt das Banner in der Fassung des aktuellen Profils neu.
+
+        Wird auch aufgerufen, bevor die Startseite steht - dann gibt es noch
+        kein Label und nichts zu tun.
+        """
+        zeile = getattr(self, "_logo_label", None)
+        if zeile is None:
+            return
+        bild = self._logo_bild()
+        if bild is None:
+            return
+        zeile.setPixmap(bild)
+        zeile.setFixedHeight(bild.height())
