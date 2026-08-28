@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.6.6 — 28. August 2026
+
+Modulstände: BudgetManager 3.1.2, FPM 1.4.3, FreizeitManager 0.2.4.
+
+### Modulstände
+
+- **BudgetManager 3.1.1 → 3.1.2.** Die lokale Import-KI des Moduls lässt sich
+  jetzt abschalten und zurücksetzen, sie lernt aus nachträglichen Korrekturen
+  an importierten Buchungen, und sie zählt ihre eigene Wiederholung nicht mehr
+  als Bestätigung — ein einmaliger Irrtum wurde bisher mit jedem Import ein
+  Stück sicherer.
+- **Ein Sicherheitshinweis, der auch Nutzer des Dachs betrifft.** Beim
+  Nachprüfen der Verschlüsselung kam heraus: Wer im BudgetManager den
+  Schnellzugang ohne Passwort nutzt, hat den Datenbankschlüssel in jeder
+  Sicherung — Schloss und Schlüssel in derselben `.bmr`-Datei. Der Schlüssel
+  bleibt bewusst drin, sonst wäre die Sicherung nach einem Plattentausch
+  unlesbar; was fehlte, war die klare Auskunft darüber. Sie steht jetzt in
+  allen drei Sprachen im Modul. Einzelheiten in den Release-Notizen des Moduls.
+
 ## 0.6.5 — 27. August 2026
 
 Modulstände: BudgetManager 3.1.1, FPM 1.4.3, FreizeitManager 0.2.4.

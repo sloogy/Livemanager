@@ -167,7 +167,7 @@ Ein Tag wie `lifeplanner-v0.6.5` baut aus den drei getrennten Checkouts:
 
 - `LifePlanner_0.6.5_Windows_Portable.zip`
 - `LifePlanner_Core_0.6.5_Windows_x86_64.lpupdate`
-- `budgetmanager_3.1.1_Windows_x86_64.lpmodule`
+- `budgetmanager_3.1.2_Windows_x86_64.lpmodule`
 - `fpm_1.4.3_Windows_x86_64.lpmodule`
 - `freizeitmanager_0.2.4_Windows_x86_64.lpmodule`
 - `LifePlanner_0.6.5_Windows_Setup.exe`
