@@ -1,5 +1,5 @@
 #define MyAppName "LifePlanner"
-#define MyAppVersion "0.6.5"
+#define MyAppVersion "0.6.6"
 #define MyAppExeName "LifePlanner.exe"
 ; Erzeugt von tools/generate_icons.py aus dem unskalierten Quellbild, mit
 ; allen Aufloesungen bis 256 in einer Datei. Ohne SetupIconFile traegt der
@@ -14,7 +14,7 @@ AppVersion={#MyAppVersion}
 DefaultDirName={localappdata}\Programs\LifePlanner
 DefaultGroupName=LifePlanner
 OutputDir=..\release
-OutputBaseFilename=LifePlanner_0.6.5_Windows_Setup
+OutputBaseFilename=LifePlanner_0.6.6_Windows_Setup
 Compression=lzma2
 SolidCompression=yes
 ArchitecturesAllowed=x64compatible
